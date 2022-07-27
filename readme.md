@@ -34,11 +34,11 @@ FreeScheduler 是利用 IdleBus 实现的轻量化定时任务调度，支持临
 | FreeScheduler | Quartz.net | FluentScheduler | HashedWheelTimer |
 | -- | -- | -- | -- |
 | (500,000 Tasks + 10s) | (500,000 Tasks + 10s) | (500,000 Tasks + 10s) | (500,000 Tasks + 10s) |
-| <img src="https://github.com/2881099/IdleBus/blob/master/Examples/Examples_FreeScheduler_VsQuartz/performance_self.png?raw=true"/> | <img src="https://github.com/2881099/IdleBus/blob/master/Examples/Examples_FreeScheduler_VsQuartz/performance_quartz.png?raw=true"/> | <img src="https://github.com/2881099/IdleBus/blob/master/Examples/Examples_FreeScheduler_VsQuartz/performance_fluentscheduler.png?raw=true"/> | <img src="https://github.com/2881099/IdleBus/blob/master/Examples/Examples_FreeScheduler_VsQuartz/performance_hashedwheeltimer.png?raw=true"/> |
+| <img src="https://github.com/2881099/FreeScheduler/blob/master/Examples/Examples_FreeScheduler_VsQuartz/performance_self.png?raw=true"/> | <img src="https://github.com/2881099/FreeScheduler/blob/master/Examples/Examples_FreeScheduler_VsQuartz/performance_quartz.png?raw=true"/> | <img src="https://github.com/2881099/FreeScheduler/blob/master/Examples/Examples_FreeScheduler_VsQuartz/performance_fluentscheduler.png?raw=true"/> | <img src="https://github.com/2881099/FreeScheduler/blob/master/Examples/Examples_FreeScheduler_VsQuartz/performance_hashedwheeltimer.png?raw=true"/> |
 | 383M | 1700+M | StackOverflow | 213M |
 | 70563.6066ms | 50692.5365ms | 未知 | 33697.8758ms |
 
-> FluentScheduler 单个 Registry 测试正常，但目测单线程执行(间隔1-10ms)，处理速度不理想 [View Code](https://github.com/2881099/IdleBus/blob/master/Examples/Examples_FreeScheduler_VsQuartz/Program.cs)
+> FluentScheduler 单个 Registry 测试正常，但目测单线程执行(间隔1-10ms)，处理速度不理想 [View Code](https://github.com/2881099/FreeScheduler/blob/master/Examples/Examples_FreeScheduler_VsQuartz/Program.cs)
 
 > 我尝试把 FreeScheduler 内核改成 HashedWheelTimer 内存占用更高(600兆)，结论：FreeScheduler 功能需要占用更多资源
 
@@ -287,7 +287,7 @@ VALUES('20200404.14714252113887232', 10, 1, 1, NULL, 'testremark', '2020-04-04 0
 
 [12:33:11] 耗时 113186.9488ms，还剩 0 个任务，0 个循环任务
 
-C:\Users\28810\Desktop\github\IdleBus\ConsoleApp1\bin\Debug\netcoreapp3.1\ConsoleApp1.exe (进程 27792)已退出，代码为 0。
+C:\Users\28810\Desktop\github\FreeScheduler\ConsoleApp1\bin\Debug\netcoreapp3.1\ConsoleApp1.exe (进程 27792)已退出，代码为 0。
 要在调试停止时自动关闭控制台，请启用“工具”->“选项”->“调试”->“调试停止时自动关闭控制台”。
 按任意键关闭此窗口. . .
 ```
