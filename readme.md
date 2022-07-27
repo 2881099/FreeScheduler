@@ -60,6 +60,9 @@ class MyTaskHandler : FreeScheduler.TaskHandlers.FreeSqlHandler
 | int QuantityTask | 任务数量 |
 
 ```c#
+//每5秒触发，执行N次
+var id = scheduler.AddTask("topic1", "body1", round: -1, 5);
+
 //每次 不同的间隔秒数触发，执行6次
 var id = scheduler.AddTask("topic1", "body1", new [] { 5, 5, 10, 10, 60, 60 });
 
@@ -74,7 +77,6 @@ var id = scheduler.AddTaskRunOnDay("topic1", "body1", round: 12, "1:20:00:00");
 
 //自定义间隔
 var id = scheduler.AddTaskCustom("topic1", "body1", "0/1 * * * * ? ");
-
 class MyCustomTaskHandler : FreeScheduler.ITaskIntervalCustomHandler
 {
     public TimeSpan? NextDelay(TaskInfo task)
