@@ -14,7 +14,6 @@ static Scheduler scheduler => _schedulerLazy.Value;
 1、普通任务
 
 ```c#
-// FreeSql 持久化任务
 class MyTaskHandler : FreeScheduler.TaskHandlers.TestHandler
 {
     public override void OnExecuting(Scheduler scheduler, TaskInfo task)
