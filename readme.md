@@ -41,7 +41,7 @@ class MyTaskHandler : FreeScheduler.TaskHandlers.FreeSqlHandler
 }
 ```
 
-## API (循环定时任务，可持久化)
+## API (循环任务/可持久化)
 
 | Method | 说明 |
 | -- | -- |
