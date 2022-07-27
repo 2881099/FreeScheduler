@@ -47,7 +47,7 @@ class MyTaskHandler : FreeScheduler.TaskHandlers.FreeSqlHandler
 | -- | -- |
 | void ctor(ITaskHandler) | 指定任务调度器（单例） |
 | string AddTask(string topic, string body, int round, int seconds) | 创建循环定时任务，返回 id |
-| string AddTask(string topic, string body, int[] seconds) | 创建多轮定时任务，设置每一轮定时值，返回 id |
+| string AddTask(string topic, string body, int[] seconds) | 创建每轮间隔不同的定时任务，返回 id |
 | string AddTaskRunOnDay(..) | 创建每日循环任务，返回 id |
 | string AddTaskRunOnWeek(..) | 创建每周循环任务，返回 id |
 | string AddTaskRunOnMonth(..) | 创建每月循环任务，返回 id |
