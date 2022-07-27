@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFrameworks>netstandard2.0;net40</TargetFrameworks>
+		<Version>1.0.1</Version>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<Authors>YeXiangQin</Authors>
+		<Description>FreeScheduler 轻量化定时任务调度，支持临时的延时任务和重复循环任务，可按秒，每天/每周/每月固定时间，自定义间隔执行。</Description>
+		<PackageProjectUrl>https://github.com/2881099/FreeScheduler</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/2881099/FreeScheduler</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PackageTags>FreeScheduler;Scheduler;Timer;TempTask</PackageTags>
+		<PackageId>$(AssemblyName)</PackageId>
+		<Title>$(AssemblyName)</Title>
+		<IsPackable>true</IsPackable>
+		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+		<SignAssembly>true</SignAssembly>
+		<AssemblyOriginatorKeyFile>yxq.snk</AssemblyOriginatorKeyFile>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|AnyCPU'">
+		<DocumentationFile>FreeScheduler.xml</DocumentationFile>
+		<WarningLevel>3</WarningLevel>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="FreeSql" Version="3.2.665" />
+		<PackageReference Include="IdleBus" Version="1.5.2" />
+		<PackageReference Include="WorkQueue" Version="1.3.0" />
+	</ItemGroup>
+
+</Project>

@@ -1,0 +1,339 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>FreeScheduler</name>
+    </assembly>
+    <members>
+        <member name="M:FreeScheduler.Snowfake.#ctor(System.Int64)">
+            <summary>
+            机器码
+            </summary>
+            <param name="workerId"></param>
+        </member>
+        <member name="M:FreeScheduler.Snowfake.tillNextMillis(System.Int64)">
+            <summary>
+            获取下一微秒时间戳
+            </summary>
+            <param name="lastTimestamp"></param>
+            <returns></returns>
+        </member>
+        <member name="M:FreeScheduler.Snowfake.timeGen">
+            <summary>
+            生成当前时间戳
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:FreeScheduler.ITaskHandler.LoadAll">
+            <summary>
+            加载正在运行中的任务（从持久化中加载）
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:FreeScheduler.ITaskHandler.Load(System.String)">
+            <summary>
+            加载单个任务（从持久化中加载）
+            </summary>
+            <param name="id"></param>
+            <returns></returns>
+        </member>
+        <member name="M:FreeScheduler.ITaskHandler.OnAdd(FreeScheduler.TaskInfo)">
+            <summary>
+            添加任务的时候触发（持久化）
+            </summary>
+            <param name="task"></param>
+        </member>
+        <member name="M:FreeScheduler.ITaskHandler.OnRemove(FreeScheduler.TaskInfo)">
+            <summary>
+            删除任务的时候触发（持久化）
+            </summary>
+            <param name="task"></param>
+        </member>
+        <member name="M:FreeScheduler.ITaskHandler.OnExecuted(FreeScheduler.Scheduler,FreeScheduler.TaskInfo,FreeScheduler.TaskLog)">
+            <summary>
+            执行任务完成的时候触发（持久化）
+            </summary>
+            <param name="scheduler"></param>
+            <param name="task"></param>
+            <param name="result"></param>
+        </member>
+        <member name="M:FreeScheduler.ITaskHandler.OnExecuting(FreeScheduler.Scheduler,FreeScheduler.TaskInfo)">
+            <summary>
+            执行任务的时候触发
+            </summary>
+            <param name="scheduler"></param>
+            <param name="task"></param>
+        </member>
+        <member name="P:FreeScheduler.TaskInfo.Id">
+            <summary>
+            任务编号
+            </summary>
+        </member>
+        <member name="P:FreeScheduler.TaskInfo.Topic">
+            <summary>
+            任务标题，可用于查询
+            </summary>
+        </member>
+        <member name="P:FreeScheduler.TaskInfo.Body">
+            <summary>
+            任务数据
+            </summary>
+        </member>
+        <member name="P:FreeScheduler.TaskInfo.Round">
+            <summary>
+            任务执行多少轮，-1为永久循环
+            </summary>
+        </member>
+        <member name="P:FreeScheduler.TaskInfo.Interval">
+            <summary>
+            定时类型
+            </summary>
+        </member>
+        <member name="P:FreeScheduler.TaskInfo.IntervalArgument">
+            <summary>
+            定时参数值<para></para>
+            Interval SEC 可设置参数值 10,20,30 分别对每一轮进行设置定时秒数，例如：<para></para>
+            Round = 12<para></para>
+            Interval = SEC<para></para>
+            Argument = 60,60,60,60,60,120,120,120,120,120,1200,1200<para></para>
+            Executing 事件可设置 Status 状态，在任意一轮中标记任务【完成】
+            </summary>
+        </member>
+        <member name="P:FreeScheduler.TaskInfo.CreateTime">
+            <summary>
+            创建时间
+            </summary>
+        </member>
+        <member name="P:FreeScheduler.TaskInfo.LastRunTime">
+            <summary>
+            最后运行时间
+            </summary>
+        </member>
+        <member name="P:FreeScheduler.TaskInfo.CurrentRound">
+            <summary>
+            当前运行到第几轮
+            </summary>
+        </member>
+        <member name="P:FreeScheduler.TaskInfo.ErrorTimes">
+            <summary>
+            错次数
+            </summary>
+        </member>
+        <member name="P:FreeScheduler.TaskInfo.Status">
+            <summary>
+            任务状态
+            </summary>
+        </member>
+        <member name="F:FreeScheduler.TaskInterval.SEC">
+            <summary>
+            按秒触发
+            </summary>
+        </member>
+        <member name="F:FreeScheduler.TaskInterval.RunOnDay">
+            <summary>
+            每天 什么时间 触发<para></para>
+            如：15:55:59<para></para>
+            每天15点55分59秒
+            </summary>
+        </member>
+        <member name="F:FreeScheduler.TaskInterval.RunOnWeek">
+            <summary>
+            每星期几 什么时间 触发<para></para>
+            如：2:15:55:59<para></para>
+            每星期二15点55分59秒
+            </summary>
+        </member>
+        <member name="F:FreeScheduler.TaskInterval.RunOnMonth">
+            <summary>
+            每月第几天 什么时间 触发<para></para>
+            如：5:15:55:59<para></para>
+            每月第五天15点55分59秒
+            </summary>
+        </member>
+        <member name="F:FreeScheduler.TaskInterval.Custom">
+            <summary>
+            自定义触发
+            </summary>
+        </member>
+        <member name="M:FreeScheduler.ITaskIntervalCustomHandler.NextDelay(FreeScheduler.TaskInfo)">
+            <summary>
+            获取下一次定时间隔，返回 null 时结束
+            </summary>
+            <param name="task">持久化任务对象</param>
+            <returns></returns>
+        </member>
+        <member name="P:FreeScheduler.TaskLog.TaskId">
+            <summary>
+            任务编号
+            </summary>
+        </member>
+        <member name="P:FreeScheduler.TaskLog.Round">
+            <summary>
+            第几轮
+            </summary>
+        </member>
+        <member name="P:FreeScheduler.TaskLog.ElapsedMilliseconds">
+            <summary>
+            耗时（毫秒）
+            </summary>
+        </member>
+        <member name="P:FreeScheduler.TaskLog.Success">
+            <summary>
+            是否成功
+            </summary>
+        </member>
+        <member name="P:FreeScheduler.TaskLog.Exception">
+            <summary>
+            异常信息
+            </summary>
+        </member>
+        <member name="P:FreeScheduler.TaskLog.Remark">
+            <summary>
+            自定义备注
+            </summary>
+        </member>
+        <member name="P:FreeScheduler.TaskLog.CreateTime">
+            <summary>
+            创建时间
+            </summary>
+        </member>
+        <member name="F:FreeScheduler.TaskStatus.Running">
+            <summary>
+            正在运行，可使用 PauseTask 方法暂停任务
+            </summary>
+        </member>
+        <member name="F:FreeScheduler.TaskStatus.Paused">
+            <summary>
+            暂停，可使用 ResumeTask 方法恢复为 Running
+            </summary>
+        </member>
+        <member name="F:FreeScheduler.TaskStatus.Completed">
+            <summary>
+            完成
+            </summary>
+        </member>
+        <member name="T:FreeScheduler.Scheduler">
+            <summary>
+            调度管理临时任务(一次性)、循环任务(存储落地)
+            </summary>
+        </member>
+        <member name="P:FreeScheduler.Scheduler.QuantityTempTask">
+            <summary>
+            临时任务数量
+            </summary>
+        </member>
+        <member name="P:FreeScheduler.Scheduler.QuantityTask">
+            <summary>
+            循环任务数量
+            </summary>
+        </member>
+        <member name="M:FreeScheduler.Scheduler.AddTempTask(System.TimeSpan,System.Action)">
+            <summary>
+            临时任务（程序重启会丢失）
+            </summary>
+            <param name="timeout"></param>
+            <param name="handle"></param>
+            <returns></returns>
+        </member>
+        <member name="M:FreeScheduler.Scheduler.RemoveTempTask(System.String)">
+            <summary>
+            删除临时任务
+            </summary>
+            <param name="id"></param>
+            <returns></returns>
+        </member>
+        <member name="M:FreeScheduler.Scheduler.ExistsTempTask(System.String)">
+            <summary>
+            判断临时任务是否存在
+            </summary>
+            <param name="id"></param>
+            <returns></returns>
+        </member>
+        <member name="M:FreeScheduler.Scheduler.AddTask(System.String,System.String,System.Int32,System.Int32)">
+            <summary>
+            添加循环执行的任务（秒）
+            </summary>
+            <param name="topic">名称</param>
+            <param name="body">数据</param>
+            <param name="round">循环次数，-1为永久循环</param>
+            <param name="seconds">秒数</param>
+            <returns></returns>
+        </member>
+        <member name="M:FreeScheduler.Scheduler.AddTask(System.String,System.String,System.Int32[])">
+            <summary>
+            添加循环执行的任务（秒）<para></para>
+            可设置参数值 10,20,30 分别对每一轮进行设置定时秒数，例如：<para></para>
+            round = 12<para></para>
+            seconds = 60,60,60,60,60,120,120,120,120,120,1200,1200<para></para>
+            Executing 事件可设置 Status 状态，在任意一轮中标记任务【完成】
+            </summary>
+            <param name="topic">名称</param>
+            <param name="body">数据</param>
+            <param name="seconds">每一轮的定时秒数：10,20,30</param>
+            <returns></returns>
+        </member>
+        <member name="M:FreeScheduler.Scheduler.AddTaskRunOnDay(System.String,System.String,System.Int32,System.String)">
+            <summary>
+            添加循环执行的任务（每天的什么时候执行）<para></para>
+            每天 expression: "20:30:00"
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:FreeScheduler.Scheduler.AddTaskRunOnWeek(System.String,System.String,System.Int32,System.String)">
+            <summary>
+            添加循环执行的任务（每个星期的什么时候执行）<para></para>
+            每周日 expression: "0:20:30:00"<para></para>
+            每周六 expression: "6:20:30:00"
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:FreeScheduler.Scheduler.AddTaskRunOnMonth(System.String,System.String,System.Int32,System.String)">
+            <summary>
+            添加循环执行的任务（每个月的什么时候执行）<para></para>
+            每月1号 expression: "1:20:30:00"<para></para>
+            每月28号 expression: "28:20:30:00"<para></para>
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:FreeScheduler.Scheduler.AddTaskCustom(System.String,System.String,System.String)">
+            <summary>
+            添加 Custom 任务
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:FreeScheduler.Scheduler.RemoveTask(System.String)">
+            <summary>
+            删除循环任务
+            </summary>
+            <param name="id"></param>
+            <returns></returns>
+        </member>
+        <member name="M:FreeScheduler.Scheduler.ExistsTask(System.String)">
+            <summary>
+            判断循环任务是否存在
+            </summary>
+            <param name="id"></param>
+            <returns></returns>
+        </member>
+        <member name="M:FreeScheduler.Scheduler.FindTask(System.Func{FreeScheduler.TaskInfo,System.Boolean})">
+            <summary>
+            查询正在运行中的循环任务
+            </summary>
+            <param name="where"></param>
+            <returns></returns>
+        </member>
+        <member name="M:FreeScheduler.Scheduler.ResumeTask(System.String)">
+            <summary>
+            恢复已暂停的任务
+            </summary>
+            <param name="id"></param>
+            <returns></returns>
+        </member>
+        <member name="M:FreeScheduler.Scheduler.PauseTask(System.String)">
+            <summary>
+            暂停正在运行的任务
+            </summary>
+            <param name="id"></param>
+            <returns></returns>
+        </member>
+    </members>
+</doc>

@@ -1,0 +1,55 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{D820DCDF-5AE7-4B8E-9D1F-A5DDE89AFD7C}"
+	ProjectSection(SolutionItems) = preProject
+		readme.md = readme.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Examples", "Examples", "{0832562A-80F3-4513-AC2F-4B4DFBB04F57}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FreeScheduler", "FreeScheduler\FreeScheduler.csproj", "{BC83459B-20B6-4A83-9FAD-A325FAE6C46D}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Examples_FreeScheduler_Core31", "Examples\Examples_FreeScheduler_Core31\Examples_FreeScheduler_Core31.csproj", "{6C936FD0-00B9-478F-A282-5F720A2187D6}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Examples_FreeScheduler_VsQuartz", "Examples\Examples_FreeScheduler_VsQuartz\Examples_FreeScheduler_VsQuartz.csproj", "{478DC24E-40D8-484A-902C-94A6A9A22E4A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Examples_FreeScheduler_WinformNet40", "Examples\Examples_FreeScheduler_WinformNet40\Examples_FreeScheduler_WinformNet40.csproj", "{10CF7100-3DB2-49E9-B080-8CF7E8B89F6A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{BC83459B-20B6-4A83-9FAD-A325FAE6C46D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BC83459B-20B6-4A83-9FAD-A325FAE6C46D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BC83459B-20B6-4A83-9FAD-A325FAE6C46D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BC83459B-20B6-4A83-9FAD-A325FAE6C46D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6C936FD0-00B9-478F-A282-5F720A2187D6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6C936FD0-00B9-478F-A282-5F720A2187D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6C936FD0-00B9-478F-A282-5F720A2187D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6C936FD0-00B9-478F-A282-5F720A2187D6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{478DC24E-40D8-484A-902C-94A6A9A22E4A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{478DC24E-40D8-484A-902C-94A6A9A22E4A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{478DC24E-40D8-484A-902C-94A6A9A22E4A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{478DC24E-40D8-484A-902C-94A6A9A22E4A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{10CF7100-3DB2-49E9-B080-8CF7E8B89F6A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{10CF7100-3DB2-49E9-B080-8CF7E8B89F6A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{10CF7100-3DB2-49E9-B080-8CF7E8B89F6A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{10CF7100-3DB2-49E9-B080-8CF7E8B89F6A}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{6C936FD0-00B9-478F-A282-5F720A2187D6} = {0832562A-80F3-4513-AC2F-4B4DFBB04F57}
+		{478DC24E-40D8-484A-902C-94A6A9A22E4A} = {0832562A-80F3-4513-AC2F-4B4DFBB04F57}
+		{10CF7100-3DB2-49E9-B080-8CF7E8B89F6A} = {0832562A-80F3-4513-AC2F-4B4DFBB04F57}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {23CB00AF-59EE-4479-A279-0A3AECA31FF5}
+	EndGlobalSection
+EndGlobal
