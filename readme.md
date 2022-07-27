@@ -41,6 +41,21 @@ class MyTaskHandler : FreeScheduler.TaskHandlers.FreeSqlHandler
 }
 ```
 
+3、管理任务
+
+```c#
+// 使用 FreeSql 或者 SQL 查询 TaskInfo、TaskLog 两个表进行分页显示
+fsql.Select<TaskInfo>().Count(out var total).OrderByDescending(a => a.CreateTime).ToList();
+fsql.Select<TaskLog>().Count(out var total).OrderByDescending(a => a.CreateTime).ToList();
+
+//暂停任务
+scheduler.PauseTask(id);
+//恢复暂停的任务
+scheduler.ResumeTask(id);
+//删除任务
+scheduler.ResumeTask(id);
+```
+
 ## API (循环任务/可持久化)
 
 | Method | 说明 |
