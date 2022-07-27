@@ -60,6 +60,9 @@ class MyTaskHandler : FreeScheduler.TaskHandlers.FreeSqlHandler
 | int QuantityTask | 任务数量 |
 
 ```c#
+//每次 不同的间隔秒数触发，执行6次
+var id = scheduler.AddTask("topic1", "body1", new [] { 5, 5, 10, 10, 60, 60 });
+
 //每天 20:00:00 触发，执行N次
 var id = scheduler.AddTaskRunOnDay("topic1", "body1", round: -1, "20:00:00");
 
