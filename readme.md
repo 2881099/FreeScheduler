@@ -33,7 +33,7 @@ class MyTaskHandler : FreeScheduler.TaskHandlers.FreeSqlHandler
 
     public override void OnExecuting(Scheduler scheduler, TaskInfo task)
     {
-        Console.WriteLine($"[{DateTime.Now.ToString("HH:mm:ss.fff")}] {task.Topic} 被执行，还剩 {scheduler.QuantityTask} 个循环任务");
+        Console.WriteLine($"[{DateTime.Now.ToString("HH:mm:ss.fff")}] {task.Topic} 被执行");
 
         //强制使任务完成
         //task.Status = TaskStatus.Completed;
