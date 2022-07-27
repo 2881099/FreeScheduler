@@ -47,8 +47,8 @@ class MyTaskHandler : FreeScheduler.TaskHandlers.FreeSqlHandler
 
 ```c#
 // 使用 FreeSql 或者 SQL 查询 TaskInfo、TaskLog 两个表进行分页显示
-fsql.Select<TaskInfo>().Count(out var total).OrderByDescending(a => a.CreateTime).ToList();
-fsql.Select<TaskLog>().Count(out var total).OrderByDescending(a => a.CreateTime).ToList();
+fsql.Select<TaskInfo>().Count(out var total).Page(pageNumber, 30).ToList();
+fsql.Select<TaskLog>().Count(out var total).Page(pageNumber, 30).ToList();
 
 //暂停任务
 scheduler.PauseTask(id);
