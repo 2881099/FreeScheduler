@@ -55,7 +55,7 @@ scheduler.PauseTask(id);
 //恢复暂停的任务
 scheduler.ResumeTask(id);
 //删除任务
-scheduler.ResumeTask(id);
+scheduler.RemoveTask(id);
 ```
 
 ## API (循环任务/可持久化)
