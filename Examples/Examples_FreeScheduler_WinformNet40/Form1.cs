@@ -92,5 +92,10 @@ namespace Examples_FreeScheduler_WinformNet40
             MessageBox.Show(_scheduler.PauseTask(customTaskId).ToString());
             button3.Enabled = true;
         }
+
+        private void button5_Click(object sender, EventArgs e)
+        {
+            _scheduler.AddTask($"test_-1_task_{DateTime.Now.ToString("g")}", $"test_-1_body{DateTime.Now.ToString("g")}", -1, 5);
+        }
     }
 }

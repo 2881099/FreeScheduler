@@ -65,8 +65,8 @@ namespace FreeScheduler
 
 		public TimeSpan? GetInterval(int curRound)
 		{
-			if (curRound < 0) curRound = 0;
 			if (curRound > Round) curRound = Round;
+			if (curRound < 0) curRound = 0;
 			DateTime now = DateTime.UtcNow;
 			DateTime curt = DateTime.MinValue;
 			TimeSpan ts = TimeSpan.Zero;
