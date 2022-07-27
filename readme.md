@@ -70,10 +70,10 @@ var id = scheduler.AddTask("topic1", "body1", new [] { 5, 5, 10, 10, 60, 60 });
 var id = scheduler.AddTaskRunOnDay("topic1", "body1", round: -1, "20:00:00");
 
 //每周一 20:00:00 触发，执行1次
-var id = scheduler.AddTaskRunOnDay("topic1", "body1", round: 1, "1:20:00:00");
+var id = scheduler.AddTaskRunOnWeek("topic1", "body1", round: 1, "1:20:00:00");
 
 //每月1日 20:00:00 触发，执行12次
-var id = scheduler.AddTaskRunOnDay("topic1", "body1", round: 12, "1:20:00:00");
+var id = scheduler.AddTaskRunOnMonth("topic1", "body1", round: 12, "1:20:00:00");
 
 //自定义间隔
 var id = scheduler.AddTaskCustom("topic1", "body1", "0/1 * * * * ? ");
