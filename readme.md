@@ -43,7 +43,7 @@ class MyTaskHandler : FreeScheduler.TaskHandlers.FreeSqlHandler
 }
 ```
 
-> Redis 持久化请安装：FreeScheduler.TaskHandlers.FreeRedis
+Redis 持久化请安装：
 
 > dotnet add package FreeSchduler.TaskHandlers.FreeRedis
 
