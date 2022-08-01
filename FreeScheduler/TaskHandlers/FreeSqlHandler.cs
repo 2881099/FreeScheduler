@@ -10,22 +10,34 @@ namespace FreeScheduler.TaskHandlers
         public FreeSqlHandler(IFreeSql fsql)
         {
             _fsql = fsql;
-            _fsql.CodeFirst
-                .ConfigEntity<TaskInfo>(a =>
+            // 此处使用 Aop 设置实体，外部可通过 FluentApi 复盖重新设置新值
+            _fsql.Aop.ConfigEntity += (_, e) =>
+            {
+                if (e.EntityType == typeof(TaskInfo)) e.ModifyResult.Name = "FreeScheduler_task";
+                if (e.EntityType == typeof(TaskLog)) e.ModifyResult.Name = "FreeScheduler_tasklog";
+            };
+            _fsql.Aop.ConfigEntityProperty += (_, e) =>
+            {
+                if (e.EntityType == typeof(TaskInfo))
                 {
-                    a.Name("FreeScheduler_task");
-                    a.Property(b => b.Id).IsPrimary(true);
-                    a.Property(b => b.Body).StringLength(-1);
-                    a.Property(b => b.Interval).MapType(typeof(string));
-                    a.Property(b => b.IntervalArgument).StringLength(1024);
-                    a.Property(b => b.Status).MapType(typeof(string));
-                })
-                .ConfigEntity<TaskLog>(a =>
+                    switch (e.Property.Name)
+                    {
+                        case nameof(TaskInfo.Id): e.ModifyResult.IsPrimary = true; break;
+                        case nameof(TaskInfo.Body): e.ModifyResult.StringLength = -1; break;
+                        case nameof(TaskInfo.Interval): e.ModifyResult.MapType = typeof(string); break;
+                        case nameof(TaskInfo.IntervalArgument): e.ModifyResult.StringLength = 1024; break;
+                        case nameof(TaskInfo.Status): e.ModifyResult.MapType = typeof(string); break;
+                    }
+                }
+                else if (e.EntityType == typeof(TaskLog))
                 {
-                    a.Name("FreeScheduler_tasklog");
-                    a.Property(b => b.Exception).StringLength(-1);
-                    a.Property(b => b.Remark).StringLength(-1);
-                });
+                    switch (e.Property.Name)
+                    {
+                        case nameof(TaskLog.Exception): e.ModifyResult.StringLength = -1; break;
+                        case nameof(TaskLog.Remark): e.ModifyResult.StringLength = -1; break;
+                    }
+                }
+            };
             _fsql.CodeFirst.SyncStructure<TaskInfo>();
             _fsql.CodeFirst.SyncStructure<TaskLog>();
         }

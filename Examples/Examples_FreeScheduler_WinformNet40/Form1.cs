@@ -1,4 +1,5 @@
 ﻿using FreeScheduler;
+using FreeRedis;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -7,6 +8,7 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
+using Newtonsoft.Json;
 
 namespace Examples_FreeScheduler_WinformNet40
 {
@@ -38,15 +40,20 @@ namespace Examples_FreeScheduler_WinformNet40
         }
         static FreeScheduler.Scheduler _scheduler;
         static IFreeSql _fsql;
+        static RedisClient _cli;
         static Form1()
         {
-
             _fsql = new FreeSql.FreeSqlBuilder()
                 .UseConnectionString(FreeSql.DataType.Sqlite, "data source=test.db;max pool size=5")
                 .UseAutoSyncStructure(true)
                 .UseNoneCommandParameter(true)
                 .UseMonitorCommand(cmd => Console.WriteLine($"=========sql: {cmd.CommandText}\r\n"))
                 .Build();
+
+            //_cli = new FreeRedis.RedisClient("127.0.0.1:6379");
+            //_cli.Serialize = obj => JsonConvert.SerializeObject(obj);
+            //_cli.Deserialize = (json, type) => JsonConvert.DeserializeObject(json, type);
+
             _scheduler = new Scheduler(new MyTaskHandler(_fsql), new MyCustomTaskHandler());
         }
 

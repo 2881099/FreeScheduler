@@ -75,11 +75,17 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="FreeRedis">
+      <Version>0.6.1</Version>
+    </PackageReference>
     <PackageReference Include="FreeSql">
       <Version>3.2.665</Version>
     </PackageReference>
     <PackageReference Include="FreeSql.Provider.Sqlite">
       <Version>3.2.665</Version>
+    </PackageReference>
+    <PackageReference Include="Newtonsoft.Json">
+      <Version>13.0.1</Version>
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
