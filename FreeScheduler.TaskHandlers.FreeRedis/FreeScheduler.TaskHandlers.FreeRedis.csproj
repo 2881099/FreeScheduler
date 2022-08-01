@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFrameworks>netstandard2.0;net40</TargetFrameworks>
+		<Version>1.0.3</Version>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<Authors>YeXiangQin</Authors>
+		<Description>轻量化定时任务调度，支持临时的延时任务和重复循环任务，可按秒，每天/每周/每月固定时间，自定义间隔执行，支持 .NET Core 2.1+、.NET Framework 4.0+ 运行环境。</Description>
+		<PackageProjectUrl>https://github.com/2881099/FreeScheduler</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/2881099/FreeScheduler</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PackageTags>FreeScheduler;Scheduler;Timer;TempTask;Quartz;FluentScheduler;HashedWheelTimer;Redis</PackageTags>
+		<PackageId>$(AssemblyName)</PackageId>
+		<Title>$(AssemblyName)</Title>
+		<IsPackable>true</IsPackable>
+		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+		<SignAssembly>true</SignAssembly>
+		<AssemblyOriginatorKeyFile>yxq.snk</AssemblyOriginatorKeyFile>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|AnyCPU'">
+		<DocumentationFile>FreeScheduler.TaskHandlers.FreeRedis.xml</DocumentationFile>
+		<WarningLevel>3</WarningLevel>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <PackageReference Include="FreeRedis" Version="0.6.1" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\FreeScheduler\FreeScheduler.csproj" />
+	</ItemGroup>
+
+</Project>

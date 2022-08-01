@@ -31,6 +31,18 @@ namespace Examples_FreeScheduler_WinformNet40
                     task.Status = TaskStatus.Completed;
             }
         }
+        class MyRedisTaskHandler : FreeScheduler.TaskHandlers.FreeRedisHandler
+        {
+            public MyRedisTaskHandler(RedisClient rds) : base(rds) { }
+
+            public override void OnExecuting(Scheduler scheduler, TaskInfo task)
+            {
+                Console.WriteLine($"[{DateTime.Now.ToString("HH:mm:ss.fff")}] {task.Topic} 被执行，还剩 {scheduler.QuantityTask} 个循环任务");
+
+                if (task.CurrentRound > 5)
+                    task.Status = TaskStatus.Completed;
+            }
+        }
         class MyCustomTaskHandler : FreeScheduler.ITaskIntervalCustomHandler
         {
             public TimeSpan? NextDelay(TaskInfo task)

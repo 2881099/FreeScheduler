@@ -89,6 +89,10 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\FreeScheduler.TaskHandlers.FreeRedis\FreeScheduler.TaskHandlers.FreeRedis.csproj">
+      <Project>{ce1bb2cb-fca0-4009-ba71-b08a2a7a7dc1}</Project>
+      <Name>FreeScheduler.TaskHandlers.FreeRedis</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\FreeScheduler\FreeScheduler.csproj">
       <Project>{bc83459b-20b6-4a83-9fad-a325fae6c46d}</Project>
       <Name>FreeScheduler</Name>
