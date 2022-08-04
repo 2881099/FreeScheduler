@@ -136,21 +136,21 @@ namespace FreeScheduler
 		public string AddTask(string topic, string body, int[] seconds) => AddTaskPriv(topic, body, seconds.Length, TaskInterval.SEC, string.Join(",", seconds));
 		/// <summary>
 		/// 添加循环执行的任务（每天的什么时候执行）<para></para>
-		/// 每天 expression: "20:30:00"
+		/// 每天 expression UTC时间: "20:30:00"
 		/// </summary>
 		/// <returns></returns>
 		public string AddTaskRunOnDay(string topic, string body, int round, string expression) => AddTaskPriv(topic, body, round, TaskInterval.RunOnDay, expression);
 		/// <summary>
 		/// 添加循环执行的任务（每个星期的什么时候执行）<para></para>
-		/// 每周日 expression: "0:20:30:00"<para></para>
-		/// 每周六 expression: "6:20:30:00"
+		/// 每周日 expression UTC时间: "0:20:30:00"<para></para>
+		/// 每周六 expression UTC时间: "6:20:30:00"
 		/// </summary>
 		/// <returns></returns>
 		public string AddTaskRunOnWeek(string topic, string body, int round, string expression) => AddTaskPriv(topic, body, round, TaskInterval.RunOnWeek, expression);
 		/// <summary>
 		/// 添加循环执行的任务（每个月的什么时候执行）<para></para>
-		/// 每月1号 expression: "1:20:30:00"<para></para>
-		/// 每月28号 expression: "28:20:30:00"<para></para>
+		/// 每月1号 expression UTC时间: "1:20:30:00"<para></para>
+		/// 每月28号 expression UTC时间: "28:20:30:00"<para></para>
 		/// </summary>
 		/// <returns></returns>
 		public string AddTaskRunOnMonth(string topic, string body, int round, string expression) => AddTaskPriv(topic, body, round, TaskInterval.RunOnMonth, expression);
