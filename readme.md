@@ -4,9 +4,9 @@ FreeScheduler 是利用 IdleBus 实现的轻量化定时任务调度，支持临
 
 ## Quick start
 
-> dotnet add package FreeSchduler
+> dotnet add package FreeScheduler
 
-> Install-Package FreeSchduler
+> Install-Package FreeScheduler
 
 ```c#
 static Lazy<Scheduler> _schedulerLazy = new Lazy(() => new Scheduler(new MyTaskHandler()));
@@ -45,9 +45,9 @@ class MyTaskHandler : FreeScheduler.TaskHandlers.FreeSqlHandler
 
 Redis 持久化请安装：
 
-> dotnet add package FreeSchduler.TaskHandlers.FreeRedis
+> dotnet add package FreeScheduler.TaskHandlers.FreeRedis
 
-> Install-Package FreeSchduler.TaskHandlers.FreeRedis
+> Install-Package FreeScheduler.TaskHandlers.FreeRedis
 
 3、管理任务
 
