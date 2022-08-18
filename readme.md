@@ -25,6 +25,13 @@ void Callback()
 scheduler.AddTempTask(TimeSpan.FromSeconds(10), Callback);
 ```
 
+| Method | 说明 |
+| -- | -- |
+| string AddTempTask(TimeSpan, Action) | 创建临时的延时任务，返回 id |
+| bool RemoveTempTask(string id) | 删除任务(临时任务) |
+| bool ExistsTempTask(string id) | 判断任务是否存在(临时任务) |
+| int QuantityTempTask | 任务数量(临时任务) |
+
 1、普通任务
 
 ```c#
@@ -122,15 +129,6 @@ class MyCustomTaskHandler : FreeScheduler.ITaskIntervalCustomHandler
     }
 }
 ```
-
-## API (临时任务)
-
-| Method | 说明 |
-| -- | -- |
-| string AddTempTask(TimeSpan, Action) | 创建临时的延时任务，返回 id |
-| bool RemoveTempTask(string id) | 删除任务(临时任务) |
-| bool ExistsTempTask(string id) | 判断任务是否存在(临时任务) |
-| int QuantityTempTask | 任务数量(临时任务) |
 
 ## Performance
 
