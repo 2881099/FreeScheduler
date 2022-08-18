@@ -13,6 +13,18 @@ static Lazy<Scheduler> _schedulerLazy = new Lazy(() => new Scheduler(new MyTaskH
 static Scheduler scheduler => _schedulerLazy.Value;
 ```
 
+0、临时任务(不可持久化)
+
+```c#
+void Callback()
+{
+    Console.WriteLine("时间到了");
+    scheduler.AddTempTask(TimeSpan.FromSeconds(10), Callback); //下一次定时
+}
+
+scheduler.AddTempTask(TimeSpan.FromSeconds(10), Callback);
+```
+
 1、普通任务
 
 ```c#
