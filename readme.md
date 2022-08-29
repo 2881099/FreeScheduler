@@ -2,6 +2,8 @@ FreeScheduler 是利用 IdleBus 实现的轻量化定时任务调度，支持临
 
 > IdleScheduler 已正式改名为 FreeScheduler
 
+如果对本项目感兴趣，欢迎加入 FreeSql QQ讨论群：8578575
+
 ## Quick start
 
 > dotnet add package FreeScheduler
