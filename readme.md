@@ -145,3 +145,14 @@ FluentScheduler 单个 Registry 测试正常，但目测单线程执行(间隔1-
 
 我尝试把 FreeScheduler 内核改成 HashedWheelTimer 内存占用更高(600兆)，结论：FreeScheduler 功能需要占用更多资源
 
+## 💕 Donation (捐赠)
+
+> 感谢你的打赏
+
+- [Alipay](https://www.cnblogs.com/FreeSql/gallery/image/338860.html)
+
+- [WeChat](https://www.cnblogs.com/FreeSql/gallery/image/338859.html)
+
+## 🗄 License (许可证)
+
+[MIT](LICENSE)
