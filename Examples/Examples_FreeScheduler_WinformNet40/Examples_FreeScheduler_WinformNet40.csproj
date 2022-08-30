@@ -76,13 +76,13 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="FreeRedis">
-      <Version>0.6.1</Version>
+      <Version>0.6.5</Version>
     </PackageReference>
     <PackageReference Include="FreeSql">
-      <Version>3.2.665</Version>
+      <Version>3.2.666</Version>
     </PackageReference>
     <PackageReference Include="FreeSql.Provider.Sqlite">
-      <Version>3.2.665</Version>
+      <Version>3.2.666</Version>
     </PackageReference>
     <PackageReference Include="Newtonsoft.Json">
       <Version>13.0.1</Version>
