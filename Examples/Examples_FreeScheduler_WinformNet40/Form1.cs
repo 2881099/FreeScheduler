@@ -116,5 +116,27 @@ namespace Examples_FreeScheduler_WinformNet40
         {
             _scheduler.AddTask($"test_-1_task_{DateTime.Now.ToString("g")}", $"test_-1_body{DateTime.Now.ToString("g")}", -1, 5);
         }
+
+        string tempTaskId = "";
+        private void button6_Click(object sender, EventArgs e)
+        {
+            button6.Enabled = false;
+            tempTaskId = _scheduler.AddTempTask(TimeSpan.FromSeconds(5), callback);
+            button7.Enabled = true;
+
+            void callback()
+            {
+                Console.WriteLine($"[{DateTime.Now.ToString("G")}] {tempTaskId} 到时触发");
+                tempTaskId = _scheduler.AddTempTask(TimeSpan.FromSeconds(5), callback);
+            }
+        }
+
+        private void button7_Click(object sender, EventArgs e)
+        {
+            button7.Enabled = false;
+            MessageBox.Show(_scheduler.RemoveTempTask(tempTaskId).ToString());
+            tempTaskId = "";
+            button6.Enabled = true;
+        }
     }
 }

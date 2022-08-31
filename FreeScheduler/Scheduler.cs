@@ -84,7 +84,7 @@ namespace FreeScheduler
 			var bus = new IdleTimeout(() =>
 			{
 				if (isdisposed) return;
-				_ib.TryRemove(id);
+				if (_ib.TryRemove(id) == false) return;
 				Interlocked.Decrement(ref _quantityTempTask);
 				if (handle != null)
 					_wq.Enqueue(handle);
@@ -104,7 +104,9 @@ namespace FreeScheduler
 		public bool RemoveTempTask(string id)
 		{
 			if (_tasks.ContainsKey(id)) return false;
-			return _ib.TryRemove(id);
+			if (_ib.TryRemove(id) == false) return false;
+			Interlocked.Decrement(ref _quantityTempTask);
+			return true;
 		}
 		/// <summary>
 		/// 判断临时任务是否存在
