@@ -69,28 +69,35 @@ namespace Examples_FreeScheduler_WinformNet40
             _scheduler = new Scheduler(new MyTaskHandler(_fsql), new MyCustomTaskHandler());
         }
 
-        string taskId = "";
         private void Form1_Load(object sender, EventArgs e)
         {
             
         }
 
+        string taskId = "";
         private void button2_Click(object sender, EventArgs e)
         {
             button2.Enabled = false;
 
             if (string.IsNullOrEmpty(taskId))
-                taskId = _scheduler.AddTask($"test_task_{DateTime.Now.ToString("g")}", $"test_task01_body{DateTime.Now.ToString("g")}", new[] { 3, 3, 3, 3, 5, 5, 5, 5, 10, 10 });
+                taskId = _scheduler.AddTask($"test_task_{DateTime.Now.ToString("g")}", $"test_task01_body{DateTime.Now.ToString("g")}", new[] { 20, 30, 30, 30, 50, 50, 50, 50, 110, 110 });
             else
                 MessageBox.Show(_scheduler.ResumeTask(taskId).ToString());
             button1.Enabled = true;
+            button8.Enabled = true;
         }
 
         private void button1_Click(object sender, EventArgs e)
         {
             button1.Enabled = false;
+            button8.Enabled = false;
             MessageBox.Show(_scheduler.PauseTask(taskId).ToString());
             button2.Enabled = true;
+        }
+
+        private void button8_Click(object sender, EventArgs e)
+        {
+            Console.WriteLine(_scheduler.RunNowTask(taskId).ToString());
         }
 
         string customTaskId = "";

@@ -23,6 +23,10 @@ namespace FreeScheduler
 		/// 循环任务数量
 		/// </summary>
 		public int QuantityTask => _quantityTask;
+		/// <summary>
+		/// 扫描线程间隔（默认值：200毫秒）
+		/// </summary>
+		public TimeSpan ScanInterval { get => _ib.ScanOptions.Interval; set => _ib.ScanOptions.Interval = value; }
 
 		WorkQueue _wq;
 		ITaskHandler _taskHandler;
@@ -361,6 +365,27 @@ namespace FreeScheduler
 				}
 			}
 			return _ib.TryRemove(id);
+		}
+		/// <summary>
+		/// 立刻运行任务（人工触发）
+		/// </summary>
+		/// <param name="id"></param>
+		/// <returns></returns>
+		public bool RunNowTask(string id)
+        {
+			if (_tasks.TryGetValue(id, out var task) && _ib.Exists(id))
+			{
+				_ib.Get(id).Dispose(); //立即触发
+				_taskHandler.OnExecuted(this, task, new TaskLog
+				{
+					CreateTime = DateTime.UtcNow,
+					TaskId = task.Id,
+					Round = task.CurrentRound,
+					Remark = $"[RunNowTask] 立刻运行任务（人工触发）"
+				});
+				return true;
+			}
+			return false;
 		}
 	}
 }

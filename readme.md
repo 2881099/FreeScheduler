@@ -33,6 +33,7 @@ scheduler.AddTempTask(TimeSpan.FromSeconds(10), Callback);
 | bool RemoveTempTask(string id) | 删除任务(临时任务) |
 | bool ExistsTempTask(string id) | 判断任务是否存在(临时任务) |
 | int QuantityTempTask | 任务数量(临时任务) |
+| int ScanInterval | 扫描线程间隔（默认值：200毫秒），值越小触发精准，试试 1ms |
 
 1、普通任务
 
@@ -83,6 +84,8 @@ scheduler.PauseTask(id);
 scheduler.ResumeTask(id);
 //删除任务
 scheduler.RemoveTask(id);
+//立刻运行任务（人工触发）
+scheduler.RunNowTask(id);
 ```
 
 ## API (循环任务/可持久化)
@@ -100,6 +103,7 @@ scheduler.RemoveTask(id);
 | bool ExistsTask(string id) | 判断任务是否存在 |
 | bool ResumeTask(string id) | 恢复已暂停的任务 |
 | bool PauseTask(string id) | 暂停正在运行的任务 |
+| bool RunNowTask(string id) | 立刻运行任务（人工触发） |
 | TaskInfo[] FindTask(lambda) | 查询正在运行中的任务 |
 | int QuantityTask | 任务数量 |
 
