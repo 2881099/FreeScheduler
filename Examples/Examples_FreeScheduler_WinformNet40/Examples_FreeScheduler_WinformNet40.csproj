@@ -76,7 +76,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="FreeRedis">
-      <Version>0.6.5</Version>
+      <Version>1.0.2</Version>
     </PackageReference>
     <PackageReference Include="FreeSql">
       <Version>3.2.666</Version>

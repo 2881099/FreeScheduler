@@ -73,7 +73,10 @@ namespace FreeScheduler
 
 			var tasks = _taskHandler.LoadAll();
 			foreach (var task in tasks)
+			{
+				if (task.Interval == TaskInterval.Custom && taskIntervalCustomHandler == null) continue;
 				AddTaskPriv(task, false);
+			}
 		}
 
 		/// <summary>
@@ -190,7 +193,8 @@ namespace FreeScheduler
 		{
 			if (task.Status != TaskStatus.Running) return;
 			if (task.Round != -1 && task.CurrentRound >= task.Round) return;
-			IdleTimeout bus = null;
+			if (task.Interval == TaskInterval.Custom && _taskIntervalCustomHandler == null) throw new Exception("Scheduler ctor(ITaskHandler, ITaskIntervalCustomHandler) 参数2 不能为 null");
+				IdleTimeout bus = null;
 			bus = new IdleTimeout(() =>
 			{
 				if (_ib.TryRemove(task.Id) == false) return;
@@ -264,10 +268,7 @@ namespace FreeScheduler
             {
 				TimeSpan? nextTimeSpan = null;
 				if (task.Interval == TaskInterval.Custom)
-                {
-					if (_taskIntervalCustomHandler == null) throw new ArgumentNullException("Scheduler ctor(ITaskHandler, ITaskIntervalCustomHandler) 参数2 不能为 null");
 					nextTimeSpan = _taskIntervalCustomHandler.NextDelay(task);
-				}
 				else
 					nextTimeSpan = task.GetInterval(curRound);
 
