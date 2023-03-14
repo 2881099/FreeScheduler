@@ -15,20 +15,34 @@ namespace Examples_FreeScheduler_Core31
 
             public override void OnExecuting(Scheduler scheduler, TaskInfo task)
             {
-                Console.WriteLine($"[{DateTime.Now.ToString("HH:mm:ss.fff")}] {task.Topic} 被执行，还剩 {scheduler.QuantityTask} 个循环任务");
+                Console.WriteLine($"[{DateTime.Now.ToString("HH:mm:ss.fff")}] {task.Topic} {task.Body} 被执行，还剩 {scheduler.QuantityTask} 个循环任务");
             }
         }
 
         static void Main(string[] args)
         {
             var fsql = new FreeSql.FreeSqlBuilder()
-                .UseConnectionString(FreeSql.DataType.Sqlite, "data source=task.db;max pool size=5")
+                .UseConnectionString(FreeSql.DataType.Sqlite, "data source=:memory:")
                 .UseAutoSyncStructure(true)
                 .UseNoneCommandParameter(true)
-                .UseMonitorCommand(cmd => Console.WriteLine($"=========sql: {cmd.CommandText}\r\n"))
+                //.UseMonitorCommand(cmd => Console.WriteLine($"=========sql: {cmd.CommandText}\r\n"))
                 .Build();
 
             Scheduler scheduler = new Scheduler(new MyTaskHandler(fsql));
+
+            var taskid = scheduler.AddTask("保活", "sss", round: -1, 2);
+            Console.WriteLine(taskid);
+            Thread.Sleep(20000);
+            Console.WriteLine("停止");
+            scheduler.RemoveTask(taskid);
+            Console.WriteLine("重开");
+
+            scheduler.AddTask("保活", "sss23", round: -1, 2);
+            Thread.Sleep(20000);
+
+            Console.ReadKey();
+            scheduler.Dispose();
+            return;
 
             var dt = DateTime.Now;
             for (var a = 0; a < 2; a++)
