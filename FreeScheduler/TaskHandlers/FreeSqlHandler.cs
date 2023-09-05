@@ -45,7 +45,14 @@ namespace FreeScheduler.TaskHandlers
         public IEnumerable<TaskInfo> LoadAll() => _fsql.Select<TaskInfo>().Where(a => a.Status == TaskStatus.Running && (a.Round < 0 || a.CurrentRound < a.Round)).ToList();
         public TaskInfo Load(string id) => _fsql.Select<TaskInfo>().Where(a => a.Id == id).First();
         public void OnAdd(TaskInfo task) => _fsql.Insert<TaskInfo>().NoneParameter().AppendData(task).ExecuteAffrows();
-        public void OnRemove(TaskInfo task) => _fsql.Delete<TaskInfo>().Where(a => a.Id == task.Id).ExecuteAffrows();
+        public void OnRemove(TaskInfo task)
+        {
+            _fsql.Transaction(() =>
+            {
+                _fsql.Delete<TaskLog>().Where(a => a.TaskId == task.Id).ExecuteAffrows();
+                _fsql.Delete<TaskInfo>().Where(a => a.Id == task.Id).ExecuteAffrows();
+            });
+        }
         public void OnExecuted(Scheduler scheduler, TaskInfo task, TaskLog result)
         {
             _fsql.Transaction(() =>

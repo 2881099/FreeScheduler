@@ -303,9 +303,18 @@ namespace FreeScheduler
 			{
 				Interlocked.Decrement(ref _quantityTask);
 				_taskHandler.OnRemove(old);
-			}
-			return _ib.TryRemove(id);
-		}
+            } 
+			else
+			{
+                var task = _taskHandler.Load(id);
+				if (task != null)
+				{
+                    _taskHandler.OnRemove(old);
+                    return true;
+                }
+            }
+            return _ib.TryRemove(id);
+        }
 		/// <summary>
 		/// 判断循环任务是否存在
 		/// </summary>
