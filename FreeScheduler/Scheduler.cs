@@ -309,7 +309,7 @@ namespace FreeScheduler
                 var task = _taskHandler.Load(id);
 				if (task != null)
 				{
-                    _taskHandler.OnRemove(old);
+                    _taskHandler.OnRemove(task);
                     return true;
                 }
             }
