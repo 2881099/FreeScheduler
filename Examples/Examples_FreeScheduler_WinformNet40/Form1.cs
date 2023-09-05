@@ -56,7 +56,7 @@ namespace Examples_FreeScheduler_WinformNet40
         static Form1()
         {
             _fsql = new FreeSql.FreeSqlBuilder()
-                .UseConnectionString(FreeSql.DataType.Sqlite, "data source=test.db;max pool size=5")
+                .UseConnectionString(FreeSql.DataType.Sqlite, "data source=:memory:")
                 .UseAutoSyncStructure(true)
                 .UseNoneCommandParameter(true)
                 .UseMonitorCommand(cmd => Console.WriteLine($"=========sql: {cmd.CommandText}\r\n"))
@@ -90,7 +90,6 @@ namespace Examples_FreeScheduler_WinformNet40
         private void button1_Click(object sender, EventArgs e)
         {
             button1.Enabled = false;
-            button8.Enabled = false;
             MessageBox.Show(_scheduler.PauseTask(taskId).ToString());
             button2.Enabled = true;
         }

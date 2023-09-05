@@ -63,6 +63,8 @@ namespace FreeScheduler
 		internal int IncrementCurrentRound() => Interlocked.Increment(ref _currentRound);
 		internal int IncrementErrorTimes() => Interlocked.Increment(ref _errorTimes);
 
+		internal int InternalFlag { get; set; }
+
 		public TimeSpan? GetInterval(int curRound)
 		{
 			if (curRound > Round) curRound = Round;

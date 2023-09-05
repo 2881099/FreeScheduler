@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.Concurrent;
-using System.Text;
-using System.Threading;
 using System.Linq;
+using System.Threading;
 
 namespace FreeScheduler
 {
@@ -206,36 +204,38 @@ namespace FreeScheduler
 					if (_tasks.TryRemove(task.Id, out var old))
 						Interlocked.Decrement(ref _quantityTask);
 				}
-				_wq.Enqueue(() =>
+				var remark = task.InternalFlag == 1 ? "[RunNowTask] 立刻运行任务（人工触发）" : "";
+                _wq.Enqueue(() =>
 				{
-					var result = new TaskLog
-					{
-						CreateTime = DateTime.UtcNow,
-						TaskId = task.Id,
-						Round = currentRound,
-						Success = true
-					};
-					var startdt = DateTime.UtcNow;
-					var status = task.Status;
-					try
-					{
-						_taskHandler.OnExecuting(this, task);
-					}
-					catch (Exception ex)
-					{
-						task.IncrementErrorTimes();
-						result.Exception = ex.InnerException == null ? $"{ex.Message}\r\n{ex.StackTrace}" : $"{ex.Message}\r\n{ex.StackTrace}\r\n\r\nInnerException: {ex.InnerException.Message}\r\n{ex.InnerException.StackTrace}";
-						result.Success = false;
-					}
-					finally
-					{
-						if (status != task.Status) result.Remark = $"[Executing] 任务状态 `{status}` 已转为 `{task.Status}`";
-						result.ElapsedMilliseconds = (long)DateTime.UtcNow.Subtract(startdt).TotalMilliseconds;
-						task.LastRunTime = DateTime.UtcNow;
-						if (round != -1 && currentRound >= round) task.Status = TaskStatus.Completed;
-						_taskHandler.OnExecuted(this, task, result);
-					}
-					if (task.Status != TaskStatus.Running) return;
+                    var result = new TaskLog
+                    {
+                        CreateTime = DateTime.UtcNow,
+                        TaskId = task.Id,
+                        Round = currentRound,
+						Remark = remark,
+                        Success = true
+                    };
+                    var startdt = DateTime.UtcNow;
+                    var status = task.Status;
+                    try
+                    {
+                        _taskHandler.OnExecuting(this, task);
+                    }
+                    catch (Exception ex)
+                    {
+                        task.IncrementErrorTimes();
+                        result.Exception = ex.InnerException == null ? $"{ex.Message}\r\n{ex.StackTrace}" : $"{ex.Message}\r\n{ex.StackTrace}\r\n\r\nInnerException: {ex.InnerException.Message}\r\n{ex.InnerException.StackTrace}";
+                        result.Success = false;
+                    }
+                    finally
+                    {
+						if (status != task.Status) result.Remark = $"{result.Remark}{(string.IsNullOrEmpty(result.Remark) ? "" : ", ")}[Executing] 任务状态 `{status}` 已转为 `{task.Status}`";
+                        result.ElapsedMilliseconds = (long)DateTime.UtcNow.Subtract(startdt).TotalMilliseconds;
+                        task.LastRunTime = DateTime.UtcNow;
+                        if (round != -1 && currentRound >= round) task.Status = TaskStatus.Completed;
+                        _taskHandler.OnExecuted(this, task, result);
+                    }
+                    if (task.Status != TaskStatus.Running) return;
 					if (round == -1 || currentRound < round)
 					{
 						var nextTimeSpan = LocalGetNextTimeSpan(task.Status, currentRound);
@@ -385,16 +385,53 @@ namespace FreeScheduler
         {
 			if (_tasks.TryGetValue(id, out var task) && _ib.Exists(id))
 			{
-				_ib.Get(id).Dispose(); //立即触发
-				_taskHandler.OnExecuted(this, task, new TaskLog
+				task.InternalFlag = 1;
+				try
 				{
-					CreateTime = DateTime.UtcNow,
-					TaskId = task.Id,
-					Round = task.CurrentRound,
-					Remark = $"[RunNowTask] 立刻运行任务（人工触发）"
-				});
+					_ib.Get(id).Dispose(); //立即触发
+				}
+				finally
+				{
+					task.InternalFlag = 0;
+				}
 				return true;
 			}
+			else
+			{
+                task = _taskHandler.Load(id);
+				if (task != null)
+				{
+                    var currentRound = task.IncrementCurrentRound();
+                    var result = new TaskLog
+                    {
+                        CreateTime = DateTime.UtcNow,
+                        TaskId = task.Id,
+                        Round = currentRound,
+                        Success = true,
+                        Remark = $"[RunNowTask] 立刻运行任务（人工触发）"
+                    };
+                    var startdt = DateTime.UtcNow;
+                    var status = task.Status;
+                    try
+                    {
+                        _taskHandler.OnExecuting(this, task);
+                    }
+                    catch (Exception ex)
+                    {
+                        task.IncrementErrorTimes();
+                        result.Exception = ex.InnerException == null ? $"{ex.Message}\r\n{ex.StackTrace}" : $"{ex.Message}\r\n{ex.StackTrace}\r\n\r\nInnerException: {ex.InnerException.Message}\r\n{ex.InnerException.StackTrace}";
+                        result.Success = false;
+                    }
+                    finally
+                    {
+                        if (status != task.Status) result.Remark = $"{result.Remark}{(string.IsNullOrEmpty(result.Remark) ? "" : ", ")}[Executing] 任务状态 `{status}` 已转为 `{task.Status}`";
+                        result.ElapsedMilliseconds = (long)DateTime.UtcNow.Subtract(startdt).TotalMilliseconds;
+                        task.LastRunTime = DateTime.UtcNow;
+                        _taskHandler.OnExecuted(this, task, result);
+                    }
+					return true;
+				}
+            }
 			return false;
 		}
 	}
