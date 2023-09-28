@@ -55,13 +55,20 @@ namespace FreeScheduler.TaskHandlers
         }
         public void OnExecuted(Scheduler scheduler, TaskInfo task, TaskLog result)
         {
-            _fsql.Transaction(() =>
+            try
             {
-                _fsql.Update<TaskInfo>().NoneParameter().SetSource(task)
-                    .UpdateColumns(a => new { a.CurrentRound, a.ErrorTimes, a.LastRunTime, a.Status })
-                    .ExecuteAffrows();
-                _fsql.Insert<TaskLog>().NoneParameter().AppendData(result).ExecuteAffrows();
-            });
+                _fsql.Transaction(() =>
+                {
+                    _fsql.Update<TaskInfo>().NoneParameter().SetSource(task)
+                        .UpdateColumns(a => new { a.CurrentRound, a.ErrorTimes, a.LastRunTime, a.Status })
+                        .ExecuteAffrows();
+                    _fsql.Insert<TaskLog>().NoneParameter().AppendData(result).ExecuteAffrows();
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[{DateTime.Now.ToString("HH:mm:ss")}] {task.Topic} FreeSqlHandler.OnExecuted 错误：{ex.Message}");
+            }
         }
 
         public virtual void OnExecuting(Scheduler scheduler, TaskInfo task)

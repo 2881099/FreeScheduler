@@ -47,26 +47,34 @@ namespace FreeScheduler.TaskHandlers
         }
         public void OnExecuted(Scheduler scheduler, TaskInfo task, TaskLog result)
         {
-            var t = Load(task.Id);
-            var status = t.Status;
-            t.CurrentRound = task.CurrentRound;
-            t.ErrorTimes = task.ErrorTimes;
-            t.LastRunTime = task.LastRunTime;
-            t.Status = task.Status;
-            var taskScore = (decimal)task.CreateTime.Subtract(_2020).TotalSeconds;
-            var resultScore = (decimal)result.CreateTime.Subtract(_2020).TotalSeconds;
-            var resultMember = _cli.Serialize(result)?.ToString();
-            using (var pipe = _cli.StartPipe())
+            try
             {
-                pipe.HSet("FreeScheduler_hset", task.Id, task);
-                if (status != t.Status)
-                    pipe.ZRem($"FreeScheduler_zset_{status}", task.Id);
-                pipe.ZAdd($"FreeScheduler_zset_{t.Status}", taskScore, task.Id);
-                //pipe.ZAdd("FreeScheduler_zset_log", resultScore, resultMember);
-                pipe.ZAdd($"FreeScheduler_zset_log_{task.Id}", resultScore, resultMember);
-                pipe.EndPipe();
+
+                var t = Load(task.Id);
+                var status = t.Status;
+                t.CurrentRound = task.CurrentRound;
+                t.ErrorTimes = task.ErrorTimes;
+                t.LastRunTime = task.LastRunTime;
+                t.Status = task.Status;
+                var taskScore = (decimal)task.CreateTime.Subtract(_2020).TotalSeconds;
+                var resultScore = (decimal)result.CreateTime.Subtract(_2020).TotalSeconds;
+                var resultMember = _cli.Serialize(result)?.ToString();
+                using (var pipe = _cli.StartPipe())
+                {
+                    pipe.HSet("FreeScheduler_hset", task.Id, task);
+                    if (status != t.Status)
+                        pipe.ZRem($"FreeScheduler_zset_{status}", task.Id);
+                    pipe.ZAdd($"FreeScheduler_zset_{t.Status}", taskScore, task.Id);
+                    //pipe.ZAdd("FreeScheduler_zset_log", resultScore, resultMember);
+                    pipe.ZAdd($"FreeScheduler_zset_log_{task.Id}", resultScore, resultMember);
+                    pipe.EndPipe();
+                }
             }
-        }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[{DateTime.Now.ToString("HH:mm:ss")}] {task.Topic} FreeRedisHandler.OnExecuted 错误：{ex.Message}");
+            }
+}
         readonly DateTime _2020 = new DateTime(2020, 1, 1);
 
         public virtual void OnExecuting(Scheduler scheduler, TaskInfo task)
