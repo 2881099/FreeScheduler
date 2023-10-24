@@ -41,7 +41,7 @@ namespace FreeScheduler.TaskHandlers
                 pipe.ZRem($"FreeScheduler_zset_{TaskStatus.Running}", task.Id);
                 pipe.ZRem($"FreeScheduler_zset_{TaskStatus.Paused}", task.Id);
                 pipe.ZRem($"FreeScheduler_zset_{TaskStatus.Completed}", task.Id);
-                pipe.HDel($"FreeScheduler_zset_log_{task.Id}");
+                pipe.Del($"FreeScheduler_zset_log_{task.Id}");
                 pipe.EndPipe();
             }
         }
