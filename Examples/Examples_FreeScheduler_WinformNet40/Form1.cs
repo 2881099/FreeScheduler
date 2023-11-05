@@ -19,37 +19,6 @@ namespace Examples_FreeScheduler_WinformNet40
             InitializeComponent();
         }
 
-        class MyTaskHandler : FreeScheduler.TaskHandlers.FreeSqlHandler
-        {
-            public MyTaskHandler(IFreeSql fsql) : base(fsql) { }
-
-            public override void OnExecuting(Scheduler scheduler, TaskInfo task)
-            {
-                Console.WriteLine($"[{DateTime.Now.ToString("HH:mm:ss.fff")}] {task.Topic} 被执行，还剩 {scheduler.QuantityTask} 个循环任务");
-
-                if (task.CurrentRound > 5)
-                    task.Status = TaskStatus.Completed;
-            }
-        }
-        class MyRedisTaskHandler : FreeScheduler.TaskHandlers.FreeRedisHandler
-        {
-            public MyRedisTaskHandler(RedisClient rds) : base(rds) { }
-
-            public override void OnExecuting(Scheduler scheduler, TaskInfo task)
-            {
-                Console.WriteLine($"[{DateTime.Now.ToString("HH:mm:ss.fff")}] {task.Topic} 被执行，还剩 {scheduler.QuantityTask} 个循环任务");
-
-                if (task.CurrentRound > 5)
-                    task.Status = TaskStatus.Completed;
-            }
-        }
-        class MyCustomTaskHandler : FreeScheduler.ITaskIntervalCustomHandler
-        {
-            public TimeSpan? NextDelay(TaskInfo task)
-            {
-                return TimeSpan.FromSeconds(5);
-            }
-        }
         static FreeScheduler.Scheduler _scheduler;
         static IFreeSql _fsql;
         static RedisClient _cli;
@@ -66,7 +35,20 @@ namespace Examples_FreeScheduler_WinformNet40
             //_cli.Serialize = obj => JsonConvert.SerializeObject(obj);
             //_cli.Deserialize = (json, type) => JsonConvert.DeserializeObject(json, type);
 
-            _scheduler = new Scheduler(new MyTaskHandler(_fsql), new MyCustomTaskHandler());
+            _scheduler = new FreeSchedulerBuilder()
+                .OnExecuting(task =>
+                {
+                    Console.WriteLine($"[{DateTime.Now.ToString("HH:mm:ss.fff")}] {task.Topic} 被执行，还剩 {_scheduler.QuantityTask} 个循环任务");
+
+                    if (task.CurrentRound > 5)
+                        task.Status = TaskStatus.Completed;
+                })
+                .UseCustomInterval(task =>
+                {
+                    return TimeSpan.FromSeconds(5);
+                })
+                .UseFreeSql(_fsql)
+                .Build();
         }
 
         private void Form1_Load(object sender, EventArgs e)

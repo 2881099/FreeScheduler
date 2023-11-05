@@ -1,0 +1,74 @@
+﻿@{
+    Layout = "";
+}
+
+<div class="box">
+	<div class="box-header with-border">
+		<h3 id="box-title" class="box-title"></h3>
+		<span class="form-group mr15"></span><a href="./add" data-toggle="modal" class="btn btn-success pull-right">添加</a>
+	</div>
+	<div class="box-body">
+		<div class="table-responsive">
+			<form id="form_search">
+				<div id="div_filter"></div>
+			</form>
+			<form id="form_list" action="./del" method="post">
+				@Html.AntiForgeryToken()
+				<input type="hidden" name="__callback" value="del_callback"/>
+				<table id="GridView1" cellspacing="0" rules="all" border="1" style="border-collapse:collapse;" class="table table-bordered table-hover text-nowrap">
+					<tr>
+						<th scope="col" style="width:2%;"><input type="checkbox" onclick="$('#GridView1 tbody tr').each(function (idx, el) { var chk = $(el).find('td:first input[type=\'checkbox\']')[0]; if (chk) chk.checked = !chk.checked; });" /></th>
+
+						<th scope="col">任务编号</th>
+						<th scope="col">第几轮</th>
+						<th scope="col">耗时（毫秒）</th>
+						<th scope="col">是否成功</th>
+						<th scope="col">异常信息</th>
+						<th scope="col">自定义备注</th>
+						<th scope="col">创建时间</th>
+					</tr>
+					<tbody>
+						@foreach(TaskLog item in ViewBag.items) {
+							<tr>
+
+								<td>@item.TaskId</td>
+								<td>@item.Round</td>
+								<td>@item.ElapsedMilliseconds</td>
+								<td>@item.Success</td>
+								<td>@item.Exception</td>
+								<td>@item.Remark</td>
+								<td>@item.CreateTime</td>
+                            </tr>
+						}
+					</tbody>
+				</table>
+			</form>
+			<a id="btn_delete_sel" href="#" class="btn btn-danger pull-right">删除选中项</a>
+			<div id="kkpager"></div>
+		</div>
+	</div>
+</div>
+
+@{
+}
+<script type="text/javascript">
+	(function () {
+		top.del_callback = function(rt) {
+			if (rt.code == 0) return top.mainViewNav.goto('./?' + new Date().getTime());
+			alert(rt.message);
+		};
+
+		var qs = _clone(top.mainViewNav.query);
+		var page = cint(qs.page, 1);
+		delete qs.page;
+		$('#kkpager').html(cms2Pager(@ViewBag.count, page, 20, qs, 'page'));
+		var fqs = _clone(top.mainViewNav.query);
+		delete fqs.page;
+		var fsc = [
+			null
+		];
+		fsc.pop();
+		cms2Filter(fsc, fqs);
+		top.mainViewInit();
+	})();
+</script>

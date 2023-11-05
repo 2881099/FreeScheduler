@@ -1,0 +1,75 @@
+﻿/* 系统字体重设 */
+body,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.h1,
+.h2,
+.h3,
+.h4,
+.h5,
+.h6,
+.main-header .logo {
+  font-family: "Microsoft YaHei", segoe ui, "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+/*公共样式*/
+.mt10 {
+  margin-top: 10px;
+}
+.mt15 {
+  margin-top: 15px;
+}
+.mt20 {
+  margin-top: 20px;
+}
+.mr10 {
+  margin-right: 10px;
+}
+.mr15 {
+  margin-right: 15px;
+}
+.mr20 {
+  margin-right: 20px;
+}
+.mb5 {
+  margin-bottom: 5px;
+}
+.mb10 {
+  margin-bottom: 10px;
+}
+.mb15 {
+  margin-bottom: 15px;
+}
+.mb20 {
+  margin-bottom: 20px;
+}
+.ml10 {
+  margin-left: 10px;
+}
+.ml15 {
+  margin-left: 15px;
+}
+.ml20 {
+  margin-left: 20px;
+}
+
+/*table#GridView1, form#form_add table {
+	width:100%;
+}
+table#GridView1 td, table#GridView1 th, form#form_add table td, form#form_add table th {
+	padding:6px 12px 6px 12px;
+}
+table#GridView1 th {
+	background-color:#9999aa;
+}*/
+
+table#GridView1 td.page{margin-top:12px;}
+table#GridView1 td.page .normal{background:#fff;border:1px solid #384EA3;padding:3px 5px 2px 5px;margin:0px 3px 0px 0px;color:#BC2931;float:left;}
+table#GridView1 td.page .dot{float:left;}
+table#GridView1 td.page .statics{}
+table#GridView1 td.page a{padding:3px 5px 2px 5px;margin:0px 3px 0px 0px;background:#367fa9;border:1px solid #384EA3;color:#fff;text-decoration:none;float:left;} 
+table#GridView1 td.page a:visited {color:#fff;}
+table#GridView1 td.page a:hover{color:#BC2931;border:1px solid #384EA3;background:#fff;}

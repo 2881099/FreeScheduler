@@ -7,7 +7,10 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="FreeScheduler" Version="1.0.9" />
 		<PackageReference Include="FreeSql.AdminLTE.Preview" Version="3.2.666" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\..\FreeScheduler\FreeScheduler.csproj" />
 	</ItemGroup>
 </Project>

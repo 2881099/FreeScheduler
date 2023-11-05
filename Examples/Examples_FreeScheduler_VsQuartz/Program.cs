@@ -26,7 +26,12 @@ namespace Examples_vs_quartz
         static long FreeSchedulerRunTimes;
         static void FreeSchedulerRun()
         {
-            _FreeScheduler = new FreeScheduler.Scheduler(new FreeScheduler.TaskHandlers.TestHandler());
+            _FreeScheduler = new FreeSchedulerBuilder()
+                .OnExecuting(task =>
+                {
+                    Console.WriteLine($"[{DateTime.Now.ToString("HH:mm:ss.fff")}] {task.Topic} 被执行");
+                })
+                .Build();
             FreeSchedulerRunStartTime = DateTime.Now;
             FreeSchedulerRunTimes = 0;
             for (var a = 0; a < 50_0000; a++)

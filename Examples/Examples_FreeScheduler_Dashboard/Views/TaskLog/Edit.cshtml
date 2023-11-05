@@ -1,0 +1,75 @@
+﻿@{
+	Layout = "";
+	TaskLog item = ViewBag.item;
+}
+
+<div class="box">
+	<div class="box-header with-border">
+		<h3 class="box-title" id="box-title"></h3>
+	</div>
+	<div class="box-body">
+		<div class="table-responsive">
+			<form id="form_add" method="post">
+				@Html.AntiForgeryToken()
+				<input type="hidden" name="__callback" value="edit_callback" />
+				<div>
+					<table cellspacing="0" rules="all" class="table table-bordered table-hover" border="1" style="border-collapse:collapse;">
+					    <tr>
+							<td>任务编号</td>
+							<td><input name="TaskId" type="text" class="datepicker" style="width:60%;" /></td>
+						</tr>
+					    <tr>
+							<td>第几轮</td>
+							<td><input name="Round" type="text" class="form-control" data-inputmask="'mask': '9', 'repeat': 6, 'greedy': false" data-mask style="width:200px;" /></td>
+						</tr>
+					    <tr>
+							<td>耗时（毫秒）</td>
+							<td><input name="ElapsedMilliseconds" type="text" class="form-control" data-inputmask="'mask': '9', 'repeat': 6, 'greedy': false" data-mask style="width:200px;" /></td>
+						</tr>
+					    <tr>
+							<td>是否成功</td>
+							<td id="Success_td"><input name="Success" type="checkbox" value="true" /></td>
+						</tr>
+					    <tr>
+							<td>异常信息</td>
+							<td><input name="Exception" type="text" class="datepicker" style="width:60%;" /></td>
+						</tr>
+					    <tr>
+							<td>自定义备注</td>
+							<td><input name="Remark" type="text" class="datepicker" style="width:60%;" /></td>
+						</tr>
+					    <tr>
+							<td>创建时间</td>
+							<td><input name="CreateTime" type="text" class="datepicker" /></td>
+						</tr>
+						<tr>
+							<td width="8%">&nbsp</td>
+							<td><input type="submit" value="@(item == null ? "添加" : "更新")" />&nbsp;<input type="button" value="取消" /></td>
+						</tr>
+					</table>
+				</div>
+			</form>
+
+		</div>
+	</div>
+</div>
+
+<script type="text/javascript">
+	(function () {
+		top.edit_callback = function (rt) {
+			if (rt.code == 0) return top.mainViewNav.goto('./?' + new Date().getTime());
+			alert(rt.message);
+		};
+
+		var form = $('#form_add')[0];
+		var item = null;
+		@if (item != null) {
+			<text>
+			item = @Html.Json(item);
+			fillForm(form, item);
+			</text>
+		}
+
+		top.mainViewInit();
+	})();
+</script>

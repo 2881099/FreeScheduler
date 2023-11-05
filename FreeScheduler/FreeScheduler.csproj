@@ -26,6 +26,7 @@
 
 	<ItemGroup>
 		<PackageReference Include="FreeSql" Version="3.2.666" />
+		<PackageReference Include="FreeRedis" Version="1.1.12" />
 		<PackageReference Include="IdleBus" Version="1.5.3" />
 		<PackageReference Include="WorkQueue" Version="1.3.0" />
 	</ItemGroup>

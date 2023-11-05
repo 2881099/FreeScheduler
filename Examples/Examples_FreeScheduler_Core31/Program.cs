@@ -28,7 +28,14 @@ namespace Examples_FreeScheduler_Core31
                 //.UseMonitorCommand(cmd => Console.WriteLine($"=========sql: {cmd.CommandText}\r\n"))
                 .Build();
 
-            Scheduler scheduler = new Scheduler(new MyTaskHandler(fsql));
+            Scheduler scheduler = null;
+            scheduler = new FreeSchedulerBuilder()
+                .OnExecuting(task =>
+                {
+                    Console.WriteLine($"[{DateTime.Now.ToString("HH:mm:ss.fff")}] {task.Topic} {task.Body} 被执行，还剩 {scheduler.QuantityTask} 个循环任务");
+                })
+                .UseFreeSql(fsql)
+                .Build();
 
             var taskid = scheduler.AddTask("保活", "sss", round: -1, 2);
             Console.WriteLine(taskid);

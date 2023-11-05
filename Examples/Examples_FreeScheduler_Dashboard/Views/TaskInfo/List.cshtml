@@ -1,0 +1,103 @@
+﻿@{
+    Layout = "";
+}
+
+<div class="box">
+	<div class="box-header with-border">
+		<h3 id="box-title" class="box-title"></h3>
+		<span class="form-group mr15"></span><a href="./add" data-toggle="modal" class="btn btn-success pull-right">添加</a>
+	</div>
+	<div class="box-body">
+		<div class="table-responsive">
+			<form id="form_search">
+				<div id="div_filter"></div>
+			</form>
+			<form id="form_list" action="./del" method="post">
+				@Html.AntiForgeryToken()
+				<input type="hidden" name="__callback" value="del_callback"/>
+				<table id="GridView1" cellspacing="0" rules="all" border="1" style="border-collapse:collapse;" class="table table-bordered table-hover text-nowrap">
+					<tr>
+						<th scope="col" style="width:2%;"><input type="checkbox" onclick="$('#GridView1 tbody tr').each(function (idx, el) { var chk = $(el).find('td:first input[type=\'checkbox\']')[0]; if (chk) chk.checked = !chk.checked; });" /></th>
+
+						<th scope="col">操作</th>
+						<th scope="col">编号</th>
+						<th scope="col">标题</th>
+						<th scope="col">数据</th>
+						<th scope="col">轮次</th>
+						<th scope="col">定时类型</th>
+						<th scope="col">定时参数值</th>
+						<th scope="col">创建时间</th>
+						<th scope="col">最后运行时间</th>
+						<th scope="col">第几轮</th>
+						<th scope="col">错次数</th>
+						<th scope="col">任务状态</th>
+					</tr>
+					<tbody>
+						@foreach(TaskInfo item in ViewBag.items) {
+							<tr>
+
+								<td><input type="checkbox" id="id" name="id" value="@item.Id" /></td>
+								<td>
+									<input type="button" class="btn btn-xs danger" value="删除" onclick="top.callTask('delete', '@item.Id')" />
+									<input type="button" class="btn btn-xs info" value="Exists" onclick="top.callTask('exists', '@item.Id')" />
+									<input type="button" class="btn btn-xs info" value="恢复" onclick="top.callTask('resume', '@item.Id')" />
+									<input type="button" class="btn btn-xs info" value="暂时" onclick="top.callTask('pause', '@item.Id')" />
+									<input type="button" class="btn btn-xs info" value="立即触发" onclick="top.callTask('run', '@item.Id')" />
+								</td>
+								<td>@item.Id</td>
+								<td>@item.Topic</td>
+								<td>@item.Body</td>
+								<td>@item.Round</td>
+								<td>@item.Interval</td>
+								<td>@item.IntervalArgument</td>
+								<td>@item.CreateTime</td>
+								<td>@item.LastRunTime</td>
+								<td>@item.CurrentRound</td>
+								<td>@item.ErrorTimes</td>
+								<td>@item.Status</td>
+                            </tr>
+						}
+					</tbody>
+				</table>
+			</form>
+			<a id="btn_delete_sel" href="#" class="btn btn-danger pull-right">删除选中项</a>
+			<div id="kkpager"></div>
+		</div>
+	</div>
+</div>
+
+@{
+}
+<script type="text/javascript">
+	(function () {
+		top.callTask = function(opt, id) {
+			$.ajax({
+				type: 'GET',
+				url: top.mainViewNav.trans('./callTask'),
+				data: { id: id, opt: opt },
+				dataType: 'json',
+				success: (rt) => {
+					console.log(rt);
+				},
+			});
+		}
+
+		top.del_callback = function(rt) {
+			if (rt.code == 0) return top.mainViewNav.goto('./?' + new Date().getTime());
+			alert(rt.message);
+		};
+
+		var qs = _clone(top.mainViewNav.query);
+		var page = cint(qs.page, 1);
+		delete qs.page;
+		$('#kkpager').html(cms2Pager(@ViewBag.count, page, 20, qs, 'page'));
+		var fqs = _clone(top.mainViewNav.query);
+		delete fqs.page;
+		var fsc = [
+			null
+		];
+		fsc.pop();
+		cms2Filter(fsc, fqs);
+		top.mainViewInit();
+	})();
+</script>

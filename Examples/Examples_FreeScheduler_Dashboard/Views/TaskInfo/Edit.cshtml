@@ -1,0 +1,108 @@
+﻿@{
+	Layout = "";
+	TaskInfo item = ViewBag.item;
+}
+
+<div class="box">
+	<div class="box-header with-border">
+		<h3 class="box-title" id="box-title"></h3>
+	</div>
+	<div class="box-body">
+		<div class="table-responsive">
+			<form id="form_add" method="post">
+				@Html.AntiForgeryToken()
+				<input type="hidden" name="__callback" value="edit_callback" />
+				<div>
+					<table cellspacing="0" rules="all" class="table table-bordered table-hover" border="1" style="border-collapse:collapse;">
+						@if (item != null)
+						{
+							<tr>
+								<td>编号</td>
+								<td><input name="Id" type="text" class="datepicker" style="width:60%;" readonly /></td>
+							</tr>
+						}
+						<tr>
+							<td>标题</td>
+							<td><input name="Topic" type="text" class="datepicker" style="width:60%;" /></td>
+						</tr>
+					    <tr>
+							<td>数据</td>
+							<td><input name="Body" type="text" class="datepicker" style="width:60%;" /></td>
+						</tr>
+					    <tr>
+							<td>轮次</td>
+							<td><input name="Round" type="text" class="form-control" data-inputmask="'mask': '9', 'repeat': 6, 'greedy': false" data-mask style="width:200px;" value="10" /></td>
+						</tr>
+					    <tr>
+							<td>定时类型</td>
+							<td>
+                                <select name="Interval"><option value="">------ 请选择 ------</option>
+									@foreach (object eo in Enum.GetValues(typeof(FreeScheduler.TaskInterval))) { <option value="@eo">@eo</option> }
+								</select>
+                            </td>
+						</tr>
+					    <tr>
+							<td>定时参数值<para></para></td>
+							<td><input name="IntervalArgument" type="text" class="datepicker" style="width:60%;" /></td>
+						</tr>
+						@if (item != null)
+						{
+							<tr>
+								<td>创建时间</td>
+								<td><input name="CreateTime" type="text" class="datepicker" /></td>
+							</tr>
+							<tr>
+								<td>最后运行时间</td>
+								<td><input name="LastRunTime" type="text" class="datepicker" /></td>
+							</tr>
+							<tr>
+								<td>第几轮</td>
+								<td><input name="CurrentRound" type="text" class="form-control" data-inputmask="'mask': '9', 'repeat': 6, 'greedy': false" data-mask style="width:200px;" /></td>
+							</tr>
+							<tr>
+								<td>错次数</td>
+								<td><input name="ErrorTimes" type="text" class="form-control" data-inputmask="'mask': '9', 'repeat': 6, 'greedy': false" data-mask style="width:200px;" /></td>
+							</tr>
+							<tr>
+								<td>任务状态</td>
+								<td>
+									<select name="Status"><option value="">------ 请选择 ------</option>
+										@foreach (object eo in Enum.GetValues(typeof(FreeScheduler.TaskStatus)))
+										{
+											<option value="@eo">@eo</option>
+										}
+									</select>
+								</td>
+							</tr>
+						}
+						<tr>
+							<td width="8%">&nbsp</td>
+							<td><input type="submit" value="@(item == null ? "添加" : "更新")" />&nbsp;<input type="button" value="取消" /></td>
+						</tr>
+					</table>
+				</div>
+			</form>
+
+		</div>
+	</div>
+</div>
+
+<script type="text/javascript">
+	(function () {
+		top.edit_callback = function (rt) {
+			if (rt.code == 0) return top.mainViewNav.goto('./?' + new Date().getTime());
+			alert(rt.message);
+		};
+
+		var form = $('#form_add')[0];
+		var item = null;
+		@if (item != null) {
+			<text>
+			item = @Html.Json(item);
+			fillForm(form, item);
+			</text>
+		}
+
+		top.mainViewInit();
+	})();
+</script>

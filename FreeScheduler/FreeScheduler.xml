@@ -351,5 +351,49 @@
             <param name="id"></param>
             <returns></returns>
         </member>
+        <member name="T:FreeSchedulerBuilder">
+            <summary>
+            Scheduler 对象构建器
+            </summary>
+        </member>
+        <member name="M:FreeSchedulerBuilder.OnExecuting(System.Action{FreeScheduler.TaskInfo})">
+            <summary>
+            任务触发
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:FreeSchedulerBuilder.UseFreeSql(IFreeSql)">
+            <summary>
+            基于 数据库，使用 FreeSql ORM 持久化<para></para>
+            UseFreeSql/UseFreeRedis 二选一
+            </summary>
+        </member>
+        <member name="M:FreeSchedulerBuilder.UseFreeRedis(FreeRedis.IRedisClient)">
+            <summary>
+            基于 Redis，使用 FreeRedis 持久化<para></para>
+            UseFreeSql/UseFreeRedis 二选一
+            </summary>
+        </member>
+        <member name="M:FreeSchedulerBuilder.UseCluster(FreeRedis.IRedisClient)">
+            <summary>
+            开启集群（依赖 Redis）<para></para>
+            特点：<para></para>
+            1. 多进程，不重复触发任务<para></para>
+            2. 多进程，各自加载自己的任务，AddTask/ResumeTask/AddTempTask 本进程执行<para></para>
+            3. 支持跨进程执行 RemoveTask/ExistsTask/PauseTask/RunNowTask/RemoveTempTask/ExistsTempTask
+            </summary>
+        </member>
+        <member name="M:FreeSchedulerBuilder.UseCustomInterval(System.Func{FreeScheduler.TaskInfo,System.Nullable{System.TimeSpan}})">
+            <summary>
+            自定义间隔（可实现 cron）
+            </summary>
+            <param name="nextDelay"></param>
+            <returns></returns>
+        </member>
+        <member name="M:FreeSchedulerBuilder.UseScanInterval(System.TimeSpan)">
+            <summary>
+            扫描线程间隔（默认值：200毫秒）
+            </summary>
+        </member>
     </members>
 </doc>
