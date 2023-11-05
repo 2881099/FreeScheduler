@@ -72,7 +72,8 @@ namespace FreeScheduler
 			DateTime now = DateTime.UtcNow;
 			DateTime curt = DateTime.MinValue;
 			TimeSpan ts = TimeSpan.Zero;
-			uint ww = 0, dd = 0, hh = 0, mm = 0, ss = 0;
+			uint ww = 0, hh = 0, mm = 0, ss = 0;
+			int dd;
 			double interval = -1;
 			switch (Interval)
 			{
@@ -120,12 +121,16 @@ namespace FreeScheduler
 				case TaskInterval.RunOnMonth:
 					string[] ddhhmmss = string.Concat(IntervalArgument).Split(':');
 					if (ddhhmmss.Length == 4)
-						if (uint.TryParse(ddhhmmss[0], out dd) && dd > 0 && dd < 32 &&
-							uint.TryParse(ddhhmmss[1], out hh) && hh < 24 &&
+						if (uint.TryParse(ddhhmmss[1], out hh) && hh < 24 &&
 							uint.TryParse(ddhhmmss[2], out mm) && mm < 60 &&
 							uint.TryParse(ddhhmmss[3], out ss) && ss < 60)
 						{
-							curt = new DateTime(now.Year, now.Month, (int)dd).AddHours(hh).AddMinutes(mm).AddSeconds(ss);
+							curt = new DateTime(now.Year, now.Month, 1).AddHours(hh).AddMinutes(mm).AddSeconds(ss);
+							if (int.TryParse(ddhhmmss[0], out dd))
+							{
+								if (dd < 0) curt.AddMonths(1);
+								curt.AddDays(dd);
+							}
 							ts = curt.Subtract(now);
 							while (!(ts.TotalMilliseconds > 0))
 							{

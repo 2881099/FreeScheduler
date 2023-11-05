@@ -154,13 +154,15 @@ namespace FreeScheduler
 		/// </summary>
 		/// <returns></returns>
 		public string AddTaskRunOnWeek(string topic, string body, int round, string expression) => AddTaskPriv(topic, body, round, TaskInterval.RunOnWeek, expression);
-		/// <summary>
-		/// 添加循环执行的任务（每个月的什么时候执行）<para></para>
-		/// 每月1号 expression UTC时间: "1:20:30:00"<para></para>
-		/// 每月28号 expression UTC时间: "28:20:30:00"<para></para>
-		/// </summary>
-		/// <returns></returns>
-		public string AddTaskRunOnMonth(string topic, string body, int round, string expression) => AddTaskPriv(topic, body, round, TaskInterval.RunOnMonth, expression);
+        /// <summary>
+        /// 添加循环执行的任务（每个月的什么时候执行）<para></para>
+        /// 每月1号: "1:20:30:00"<para></para>
+        /// 每月最后1天："-1:20:30:00"<para></para>
+        /// 每月倒数第2天："-2:20:30:00"<para></para>
+		/// 注意：expression UTC时间
+        /// </summary>
+        /// <returns></returns>
+        public string AddTaskRunOnMonth(string topic, string body, int round, string expression) => AddTaskPriv(topic, body, round, TaskInterval.RunOnMonth, expression);
 
 		/// <summary>
 		/// 添加 Custom 任务，new Scheduler(.., new YourCustomHandler())

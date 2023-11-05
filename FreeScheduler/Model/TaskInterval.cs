@@ -23,12 +23,14 @@ namespace FreeScheduler
 		/// 每星期二15点55分59秒
 		/// </summary>
 		RunOnWeek = 12,
-		/// <summary>
-		/// 每月第几天 什么时间 触发<para></para>
-		/// 如：5:15:55:59<para></para>
-		/// 每月第五天15点55分59秒
-		/// </summary>
-		RunOnMonth = 13,
+        /// <summary>
+        /// 每月第几天 什么时间 触发<para></para>
+        /// 如：5:15:55:59<para></para>
+        /// 每月第5天15点55分59秒<para></para>
+        /// 如：-1:15:55:59<para></para>
+        /// 每月倒数第1天15点55分59秒
+        /// </summary>
+        RunOnMonth = 13,
 
         /// <summary>
         /// 自定义触发，new Scheduler(.., new YourCustomHandler())
