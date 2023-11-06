@@ -408,12 +408,12 @@ namespace FreeScheduler
 		/// <returns></returns>
 		public TaskInfo[] FindTask(Func<TaskInfo, bool> where) => _tasks.Values.Where(where).ToArray();
 
-		/// <summary>
-		/// 恢复已暂停的任务
-		/// </summary>
-		/// <param name="id"></param>
-		/// <returns></returns>
-		public bool ResumeTask(string id)
+        /// <summary>
+        /// 恢复已暂停的任务
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public bool ResumeTask(string id)
 		{
 			var task = _taskHandler.Load(id);
 			if (task == null) return false;

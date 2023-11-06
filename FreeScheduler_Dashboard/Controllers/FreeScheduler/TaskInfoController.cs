@@ -1,18 +1,5 @@
 ﻿using FreeScheduler;
-using FreeSql;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Filters;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Threading.Tasks;
-using TaskStatus = FreeScheduler.TaskStatus;
 
 namespace FreeSql.FreeScheduler.Controllers
 {
@@ -24,7 +11,8 @@ namespace FreeSql.FreeScheduler.Controllers
     {
         IFreeSql fsql;
         Scheduler scheduler;
-        public TaskInfoController(IFreeSql orm, Scheduler scheduler) {
+        public TaskInfoController(IFreeSql orm, Scheduler scheduler)
+        {
             fsql = orm;
             this.scheduler = scheduler;
         }
@@ -33,8 +21,7 @@ namespace FreeSql.FreeScheduler.Controllers
         [HttpGet("callTask")]
         public ApiResult callTask([FromQuery] string id, [FromQuery] string opt)
         {
-            var task = fsql.Select<TaskInfo>().Where(a => a.Id == id).First();
-            switch(opt)
+            switch (opt)
             {
                 case "delete": return ApiResult.Success.SetMessage(scheduler.RemoveTask(id).ToString());
                 case "exists": return ApiResult.Success.SetMessage(scheduler.ExistsTask(id).ToString());

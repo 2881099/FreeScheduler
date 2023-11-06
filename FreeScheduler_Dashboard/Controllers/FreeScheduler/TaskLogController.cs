@@ -1,17 +1,5 @@
 ﻿using FreeScheduler;
-using FreeSql;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Filters;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Threading.Tasks;
 
 namespace FreeSql.FreeScheduler.Controllers
 {
@@ -22,7 +10,8 @@ namespace FreeSql.FreeScheduler.Controllers
     public class TaskLogController : Controller
     {
         IFreeSql fsql;
-        public TaskLogController(IFreeSql orm) {
+        public TaskLogController(IFreeSql orm)
+        {
             fsql = orm;
         }
 

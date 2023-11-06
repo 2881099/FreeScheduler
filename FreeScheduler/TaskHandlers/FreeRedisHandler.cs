@@ -17,7 +17,8 @@ namespace FreeScheduler.TaskHandlers
         {
             if (pageNumber <= 0) pageNumber = 1;
             if (pageSize <= 0) pageSize = 100;
-            var taskIds = _cli.ZRangeByScore($"FreeScheduler_zset_{TaskStatus.Running}", "-inf", "+inf", Math.Max(0, pageNumber - 1) * pageSize, pageSize);
+            var taskScore = (decimal)DateTime.UtcNow.Subtract(_2020).TotalSeconds;
+            var taskIds = _cli.ZRangeByScore($"FreeScheduler_zset_{TaskStatus.Running}", 0, taskScore, Math.Max(0, pageNumber - 1) * pageSize, pageSize);
             if (taskIds.Length == 0) return new TaskInfo[0];
             return _cli.HMGet<TaskInfo>("FreeScheduler_hset", taskIds);
         }
