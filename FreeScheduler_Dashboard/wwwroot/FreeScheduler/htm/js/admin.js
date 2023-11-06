@@ -177,7 +177,7 @@ function admin_init($, nav) {
 	});
 	$('table tr').each(function (i, el) {
 		var td = $(el).find('td')
-		if (td.length === 2) td[0].style.width = '8%';
+		if (td.length === 2) td[0].style.width = '20%';
 	});
 	//设置页面title
 	for (var a in div_left_router) {

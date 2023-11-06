@@ -12,6 +12,6 @@
 	</ItemGroup>
 	
 	<ItemGroup>
-	  <ProjectReference Include="..\..\FreeScheduler\FreeScheduler.csproj" />
+	  <ProjectReference Include="..\FreeScheduler\FreeScheduler.csproj" />
 	</ItemGroup>
 </Project>

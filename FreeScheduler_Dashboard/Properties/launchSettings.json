@@ -9,7 +9,7 @@
     }
   },
   "profiles": {
-    "Examples_FreeScheduler_Dashboard": {
+    "FreeScheduler_Dashboard": {
       "commandName": "Project",
       "dotnetRunMessages": true,
       "launchBrowser": true,

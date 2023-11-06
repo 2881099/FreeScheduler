@@ -25,6 +25,12 @@ scheduler = new FreeSchedulerBuilder()
     .UseFreeSql(fsql)
     .UseCluster(redis)
     .Build();
+if (fsql.Select<TaskInfo>().Any() == false)
+{
+    scheduler.AddTaskRunOnWeek("武林大会", "json", -1, "1:20:00:00");
+    scheduler.AddTask("定时20秒", "json", 10, 20);
+    scheduler.AddTask("测试任务1", "json", new[] { 10, 30, 60, 100, 150, 200 });
+}
 
 var builder = WebApplication.CreateBuilder(args);
 
