@@ -6,7 +6,7 @@ namespace FreeScheduler.TaskHandlers
 {
     public class TestHandler : ITaskHandler
     {
-        public IEnumerable<TaskInfo> LoadAll() => new TaskInfo[0];
+        public IEnumerable<TaskInfo> LoadAll(int offset, int limit) => new TaskInfo[0];
         public TaskInfo Load(string id) => null;
         public void OnAdd(TaskInfo task) { }
         public void OnRemove(TaskInfo task) { }

@@ -13,9 +13,11 @@ namespace FreeScheduler.TaskHandlers
             _cli = cli;
         }
 
-        public IEnumerable<TaskInfo> LoadAll()
+        public IEnumerable<TaskInfo> LoadAll(int pageNumber, int pageSize)
         {
-            var taskIds = _cli.ZRange($"FreeScheduler_zset_{TaskStatus.Running}", 0, -1);
+            if (pageNumber <= 0) pageNumber = 1;
+            if (pageSize <= 0) pageSize = 100;
+            var taskIds = _cli.ZRangeByScore($"FreeScheduler_zset_{TaskStatus.Running}", "-inf", "+inf", Math.Max(0, pageNumber - 1) * pageSize, pageSize);
             if (taskIds.Length == 0) return new TaskInfo[0];
             return _cli.HMGet<TaskInfo>("FreeScheduler_hset", taskIds);
         }

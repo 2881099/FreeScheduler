@@ -10,7 +10,7 @@ namespace FreeScheduler
 		/// 加载正在运行中的任务（从持久化中加载）
 		/// </summary>
 		/// <returns></returns>
-		IEnumerable<TaskInfo> LoadAll();
+		IEnumerable<TaskInfo> LoadAll(int pageNumber = 1, int pageSize = 100);
 		/// <summary>
 		/// 加载单个任务（从持久化中加载）
 		/// </summary>

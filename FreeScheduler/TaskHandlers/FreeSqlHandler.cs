@@ -42,7 +42,10 @@ namespace FreeScheduler.TaskHandlers
             _fsql.CodeFirst.SyncStructure<TaskLog>();
         }
 
-        public IEnumerable<TaskInfo> LoadAll() => _fsql.Select<TaskInfo>().Where(a => a.Status == TaskStatus.Running && (a.Round < 0 || a.CurrentRound < a.Round)).ToList();
+        public IEnumerable<TaskInfo> LoadAll(int pageNumber, int pageSize) => _fsql.Select<TaskInfo>()
+            .Where(a => a.Status == TaskStatus.Running && (a.Round < 0 || a.CurrentRound < a.Round))
+            .OrderBy(a => a.Id)
+            .Page(pageNumber, pageSize).ToList();
         public TaskInfo Load(string id) => _fsql.Select<TaskInfo>().Where(a => a.Id == id).First();
         public void OnAdd(TaskInfo task) => _fsql.Insert<TaskInfo>().NoneParameter().AppendData(task).ExecuteAffrows();
         public void OnRemove(TaskInfo task)

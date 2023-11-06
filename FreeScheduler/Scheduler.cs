@@ -29,7 +29,7 @@ namespace FreeScheduler
 		internal WorkQueue _wq;
         internal ITaskHandler _taskHandler;
         internal ITaskIntervalCustomHandler _taskIntervalCustomHandler;
-		ConcurrentDictionary<string, TaskInfo> _tasks = new ConcurrentDictionary<string, TaskInfo>();
+        internal ConcurrentDictionary<string, TaskInfo> _tasks = new ConcurrentDictionary<string, TaskInfo>();
 		internal ClusterContext _clusterContext;
 
 		#region Dispose
@@ -74,26 +74,30 @@ namespace FreeScheduler
 			});
 			_wq = new WorkQueue(30);
 
-            var tasks = _taskHandler.LoadAll();
 			if (_clusterContext != null)
 			{
                 _wq.Enqueue(() =>
                 {
                     _clusterContext.Init(this);
-                    foreach (var task in tasks)
-					{
-						if (task.Interval == TaskInterval.Custom && taskIntervalCustomHandler == null) continue;
-						AddTaskPriv(task, false);
-					}
-				});
+                    LoadTask(1);
+                });
 			}
 			else
+            {
+				LoadTask(1);
+            }
+
+			void LoadTask(int pageNumber)
 			{
+                var tasks = _taskHandler.LoadAll(pageNumber, 100);
+				var tasksCount = tasks.Count();
                 foreach (var task in tasks)
                 {
                     if (task.Interval == TaskInterval.Custom && taskIntervalCustomHandler == null) continue;
                     AddTaskPriv(task, false);
                 }
+                if (tasksCount < 100) return;
+                AddTempTask(TimeSpan.FromSeconds(1), () => LoadTask(pageNumber + 1), false);
             }
         }
 
@@ -229,7 +233,7 @@ namespace FreeScheduler
 		{
 			if (task.Status != TaskStatus.Running) return;
 			if (task.Round != -1 && task.CurrentRound >= task.Round) return;
-			if (task.Interval == TaskInterval.Custom && _taskIntervalCustomHandler == null) throw new Exception($"{task.Id} Custom 未设置 ITaskIntervalCustomHandler");
+			if (task.Interval == TaskInterval.Custom && _taskIntervalCustomHandler == null) throw new Exception($"{task.Id} Custom 未设置 {nameof(FreeSchedulerBuilder.UseCustomInterval)}");
 			if (_clusterContext != null && _clusterContext.Register(task.Id, nameof(AddTask), 0) == false) return;
 			IdleTimeout bus = null;
 			bus = new IdleTimeout(() =>
