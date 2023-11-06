@@ -66,6 +66,7 @@ namespace FreeScheduler.TaskHandlers
                     pipe.ZAdd($"FreeScheduler_zset_{t.Status}", taskScore, task.Id);
                     //pipe.ZAdd("FreeScheduler_zset_log", resultScore, resultMember);
                     pipe.ZAdd($"FreeScheduler_zset_log_{task.Id}", resultScore, resultMember);
+                    //pipe.ZRemRangeByScore($"FreeScheduler_zset_log_{task.Id}", 0, resultScore - 86400 * 7);
                     pipe.EndPipe();
                 }
             }

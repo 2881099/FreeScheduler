@@ -14,6 +14,7 @@ var fsql = new FreeSql.FreeSqlBuilder()
 var redis = new RedisClient("127.0.0.1,poolsize=10,exitAutoDisposePool=false");
 redis.Serialize = obj => JsonConvert.SerializeObject(obj);
 redis.Deserialize = (json, type) => JsonConvert.DeserializeObject(json, type);
+redis.Notice += (s, e) => Console.Write(e.Log);
 
 Scheduler scheduler = null;
 scheduler = new FreeSchedulerBuilder()

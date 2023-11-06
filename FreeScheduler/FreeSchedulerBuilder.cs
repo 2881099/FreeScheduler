@@ -48,9 +48,11 @@ public class FreeSchedulerBuilder
     /// <summary>
     /// 开启集群（依赖 Redis）<para></para>
     /// 特点：<para></para>
-    /// 1. 多进程，不重复触发任务<para></para>
-    /// 2. 多进程，各自加载自己的任务，AddTask/ResumeTask/AddTempTask 本进程执行<para></para>
-    /// 3. 支持跨进程执行 RemoveTask/ExistsTask/PauseTask/RunNowTask/RemoveTempTask/ExistsTempTask
+    /// - 支持 单项目，多站点部署<para></para>
+    /// - 支持 多进程，不重复执行<para></para>
+    /// - 支持 进程退出后，由其他进程重新加载任务（约30秒后）<para></para>
+    /// - 支持 进程互通，任意进程都可以执行（RemoveTask/ExistsTask/PauseTask/RunNowTask/RemoveTempTask/ExistsTempTask）<para></para>
+    /// - 支持 进程意外离线后，卸载进程内的任务，重新安排上线<para></para>
     /// </summary>
     public FreeSchedulerBuilder UseCluster(IRedisClient redis)
     {
@@ -81,10 +83,13 @@ public class FreeSchedulerBuilder
         ITaskHandler taskHandler = null;
         if (_fsql != null) taskHandler = new FreeSqlTaskHandler(_fsql) { Executing = _executing };
         else if (_redis != null) taskHandler = new FreeRedisTaskHandler(_redis) { Executing = _executing };
-        else taskHandler = new MemoryTaskHandler() { Executing = _executing };
-        var scheduler = new Scheduler(taskHandler, _customIntervalHandler, 1);
+        else
+        {
+            if (_clusterRedis != null) throw new Exception($"UseCluster 集群功能仅支持 UseFreeSql/UseFreeRedis 持久化");
+            taskHandler = new MemoryTaskHandler() { Executing = _executing };
+        }
+        var scheduler = new Scheduler(taskHandler, _customIntervalHandler, _clusterRedis != null ? new ClusterContext(_clusterRedis) : null);
         scheduler.ScanInterval = _scanInterval;
-        if (_clusterRedis != null) scheduler._clusterContext = new ClusterContext(scheduler, _clusterRedis);
         return scheduler;
     }
 

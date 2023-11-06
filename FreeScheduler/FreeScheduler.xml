@@ -378,9 +378,11 @@
             <summary>
             开启集群（依赖 Redis）<para></para>
             特点：<para></para>
-            1. 多进程，不重复触发任务<para></para>
-            2. 多进程，各自加载自己的任务，AddTask/ResumeTask/AddTempTask 本进程执行<para></para>
-            3. 支持跨进程执行 RemoveTask/ExistsTask/PauseTask/RunNowTask/RemoveTempTask/ExistsTempTask
+            - 支持 单项目，多站点部署<para></para>
+            - 支持 多进程，不重复执行<para></para>
+            - 支持 进程退出后，由其他进程重新加载任务（约30秒后）<para></para>
+            - 支持 进程互通，任意进程都可以执行（RemoveTask/ExistsTask/PauseTask/RunNowTask/RemoveTempTask/ExistsTempTask）<para></para>
+            - 支持 进程意外离线后，卸载进程内的任务，重新安排上线<para></para>
             </summary>
         </member>
         <member name="M:FreeSchedulerBuilder.UseCustomInterval(System.Func{FreeScheduler.TaskInfo,System.Nullable{System.TimeSpan}})">

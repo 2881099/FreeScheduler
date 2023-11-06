@@ -32,10 +32,18 @@ class xxx
 | OnExecuting(Action\<TaskInfo\> executing) | 任务触发 |
 | UseFreeSql() | 基于 数据库，使用 FreeSql ORM 持久化 |
 | UseFreeRedis() | 基于 Redis，使用 FreeRedis 持久化 |
-| UseCluster() | 开启集群（依赖 Redis），支持跨进程 |
+| UseCluster() | 开启集群（依赖 Redis），支持跨进程互通，进程离线后其他进程重新加载任务 |
 | UseCustomInterval(Func\<TaskInfo, TimeSpan?\> nextDelay) | 自定义间隔（可实现 cron） |
 | UseScanInterval() | 扫描线程间隔（默认值：200毫秒），值越小触发精准，试试 1ms |
 | Build() | 创建 Scheduler 对象 |
+
+## 集群特性
+
+- 支持 单项目，多站点部署
+- 支持 多进程，不重复执行
+- 支持 进程退出后，由其他进程重新加载任务（约30秒后）
+- 支持 进程互通，任意进程都可以执行（RemoveTask/ExistsTask/PauseTask/RunNowTask/RemoveTempTask/ExistsTempTask）
+- 支持 进程意外离线后，卸载进程内的任务，重新安排上线
 
 1、临时任务(不可持久化)
 

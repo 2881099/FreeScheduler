@@ -26,14 +26,14 @@ namespace FreeScheduler
 		/// </summary>
 		public TimeSpan ScanInterval { get => _ib.ScanOptions.Interval; set => _ib.ScanOptions.Interval = value; }
 
-		WorkQueue _wq;
-		ITaskHandler _taskHandler;
-		ITaskIntervalCustomHandler _taskIntervalCustomHandler;
+		internal WorkQueue _wq;
+        internal ITaskHandler _taskHandler;
+        internal ITaskIntervalCustomHandler _taskIntervalCustomHandler;
 		ConcurrentDictionary<string, TaskInfo> _tasks = new ConcurrentDictionary<string, TaskInfo>();
 		internal ClusterContext _clusterContext;
 
-        #region Dispose
-        ~Scheduler() => Dispose();
+		#region Dispose
+		~Scheduler() => Dispose();
 		bool isdisposed = false;
 		object isdisposedLock = new object();
 		public void Dispose()
@@ -53,60 +53,81 @@ namespace FreeScheduler
 		}
 		#endregion
 
-		[Obsolete("请使用最新的 var scheduler = new FreeSchedulerBuilder().UseMemory(..).Build() 方式创建")]
-		public Scheduler(ITaskHandler taskHandler) : this(taskHandler, null, 1) { }
-        [Obsolete("请使用最新的 var scheduler = new FreeSchedulerBuilder().UseMemory(..).UseCustomInterval(..).Build() 方式创建")]
-        public Scheduler(ITaskHandler taskHandler, ITaskIntervalCustomHandler taskIntervalCustomHandler) : this(taskHandler, taskIntervalCustomHandler, 1) { }
-        internal Scheduler(ITaskHandler taskHandler, ITaskIntervalCustomHandler taskIntervalCustomHandler, int _)
+		[Obsolete("请使用最新的 var scheduler = new FreeSchedulerBuilder().OnExecuting(..).Build() 方式创建")]
+		public Scheduler(ITaskHandler taskHandler) : this(taskHandler, null, null) { }
+		[Obsolete("请使用最新的 var scheduler = new FreeSchedulerBuilder().OnExecuting(..).UseCustomInterval(..).Build() 方式创建")]
+		public Scheduler(ITaskHandler taskHandler, ITaskIntervalCustomHandler taskIntervalCustomHandler) : this(taskHandler, taskIntervalCustomHandler, null) { }
+		internal Scheduler(ITaskHandler taskHandler, ITaskIntervalCustomHandler taskIntervalCustomHandler, ClusterContext culsterContext)
 		{
-            if (taskHandler == null) throw new ArgumentNullException("taskHandler 参数不能为 null");
-            _taskHandler = taskHandler;
-            _taskIntervalCustomHandler = taskIntervalCustomHandler;
+			if (taskHandler == null) throw new ArgumentNullException("taskHandler 参数不能为 null");
+			_taskHandler = taskHandler;
+			_taskIntervalCustomHandler = taskIntervalCustomHandler;
+			_clusterContext = culsterContext;
 
             _ib = new IdleBus();
-            _ib.ScanOptions.Interval = TimeSpan.FromMilliseconds(200);
-            _ib.ScanOptions.BatchQuantity = 100000;
-            _ib.ScanOptions.BatchQuantityWait = TimeSpan.FromMilliseconds(100);
-            _ib.ScanOptions.QuitWaitSeconds = 20;
-            _ib.Notice += new EventHandler<IdleBus<IDisposable>.NoticeEventArgs>((s, e) =>
-            {
-            });
-            _wq = new WorkQueue(30);
+			_ib.ScanOptions.Interval = TimeSpan.FromMilliseconds(200);
+			_ib.ScanOptions.BatchQuantity = 100000;
+			_ib.ScanOptions.BatchQuantityWait = TimeSpan.FromMilliseconds(100);
+			_ib.ScanOptions.QuitWaitSeconds = 20;
+			_ib.Notice += new EventHandler<IdleBus<IDisposable>.NoticeEventArgs>((s, e) =>
+			{
+			});
+			_wq = new WorkQueue(30);
 
             var tasks = _taskHandler.LoadAll();
-            foreach (var task in tasks)
-            {
-                if (task.Interval == TaskInterval.Custom && taskIntervalCustomHandler == null) continue;
-                AddTaskPriv(task, false);
+			if (_clusterContext != null)
+			{
+                _wq.Enqueue(() =>
+                {
+                    _clusterContext.Init(this);
+                    foreach (var task in tasks)
+					{
+						if (task.Interval == TaskInterval.Custom && taskIntervalCustomHandler == null) continue;
+						AddTaskPriv(task, false);
+					}
+				});
+			}
+			else
+			{
+                foreach (var task in tasks)
+                {
+                    if (task.Interval == TaskInterval.Custom && taskIntervalCustomHandler == null) continue;
+                    AddTaskPriv(task, false);
+                }
             }
         }
 
-        /// <summary>
-        /// 临时任务（程序重启会丢失）
-        /// </summary>
-        /// <param name="timeout"></param>
-        /// <param name="handle"></param>
-        /// <returns></returns>
-        public string AddTempTask(TimeSpan timeout, Action handle)
-		{
-			var id = Guid.NewGuid().ToString();
+		/// <summary>
+		/// 临时任务（程序重启会丢失）
+		/// </summary>
+		/// <param name="timeout"></param>
+		/// <param name="handle"></param>
+		/// <returns></returns>
+		public string AddTempTask(TimeSpan timeout, Action handle) => AddTempTask(timeout, handle, true);
+        internal string AddTempTask(TimeSpan timeout, Action handle, bool cluster)
+        {
+            var id = Guid.NewGuid().ToString();
+			if (!cluster) id = $"system_{id}";
 			var bus = new IdleTimeout(() =>
-			{
-				if (isdisposed) return;
-				if (_ib.TryRemove(id) == false) return;
-				Interlocked.Decrement(ref _quantityTempTask);
+            {
+                if (isdisposed) return;
+                if (_ib.TryRemove(id) == false) return;
+                Interlocked.Decrement(ref _quantityTempTask);
 				if (handle != null)
+				{
+					if (cluster && _clusterContext?.IsOffline() == true) return;
 					_wq.Enqueue(handle);
-				_clusterContext?.Remove(id, nameof(AddTempTask));
-			});
-			if (_ib.TryRegister(id, () => bus, timeout))
-			{
-				_ib.Get(id);
-				Interlocked.Increment(ref _quantityTempTask);
-			}
-			_clusterContext?.Register(id, nameof(AddTempTask), (int)timeout.TotalSeconds);
-			return id;
-		}
+				}
+                if (cluster) _clusterContext?.Remove(id, nameof(AddTempTask));
+            });
+            if (_ib.TryRegister(id, () => bus, timeout))
+            {
+                _ib.Get(id);
+                Interlocked.Increment(ref _quantityTempTask);
+            }
+            if (cluster) _clusterContext?.Register(id, nameof(AddTempTask), (int)timeout.TotalSeconds);
+            return id;
+        }
         /// <summary>
         /// 删除临时任务
         /// </summary>
@@ -116,10 +137,10 @@ namespace FreeScheduler
 		{
 			if (_tasks.ContainsKey(id) == false && _ib.TryRemove(id))
 			{
-                Interlocked.Decrement(ref _quantityTempTask);
-                _clusterContext?.Remove(id, nameof(AddTempTask));
-                return true;
-            }
+				Interlocked.Decrement(ref _quantityTempTask);
+				_clusterContext?.Remove(id, nameof(AddTempTask));
+				return true;
+			}
 			if (_clusterContext?.RemoteCall(id, nameof(AddTempTask), nameof(RemoveTempTask), out var result) == true) return result;
 			return false;
 		}
@@ -129,11 +150,11 @@ namespace FreeScheduler
 		/// <param name="id"></param>
 		/// <returns></returns>
 		public bool ExistsTempTask(string id)
-        {
+		{
 			if (_tasks.ContainsKey(id) == false && _ib.Exists(id)) return true;
-            if (_clusterContext?.RemoteCall(id, nameof(AddTempTask), nameof(ExistsTempTask), out var result) == true) return result;
-            return false;
-        }
+			if (_clusterContext?.RemoteCall(id, nameof(AddTempTask), nameof(ExistsTempTask), out var result) == true) return result;
+			return false;
+		}
 
 		/// <summary>
 		/// 添加循环执行的任务（秒）
@@ -169,15 +190,15 @@ namespace FreeScheduler
 		/// </summary>
 		/// <returns></returns>
 		public string AddTaskRunOnWeek(string topic, string body, int round, string expression) => AddTaskPriv(topic, body, round, TaskInterval.RunOnWeek, expression);
-        /// <summary>
-        /// 添加循环执行的任务（每个月的什么时候执行）<para></para>
-        /// 每月1号: "1:20:30:00"<para></para>
-        /// 每月最后1天："-1:20:30:00"<para></para>
-        /// 每月倒数第2天："-2:20:30:00"<para></para>
+		/// <summary>
+		/// 添加循环执行的任务（每个月的什么时候执行）<para></para>
+		/// 每月1号: "1:20:30:00"<para></para>
+		/// 每月最后1天："-1:20:30:00"<para></para>
+		/// 每月倒数第2天："-2:20:30:00"<para></para>
 		/// 注意：expression UTC时间
-        /// </summary>
-        /// <returns></returns>
-        public string AddTaskRunOnMonth(string topic, string body, int round, string expression) => AddTaskPriv(topic, body, round, TaskInterval.RunOnMonth, expression);
+		/// </summary>
+		/// <returns></returns>
+		public string AddTaskRunOnMonth(string topic, string body, int round, string expression) => AddTaskPriv(topic, body, round, TaskInterval.RunOnMonth, expression);
 
 		/// <summary>
 		/// 添加 Custom 任务，new Scheduler(.., new YourCustomHandler())
@@ -185,7 +206,7 @@ namespace FreeScheduler
 		/// <returns></returns>
 		public string AddTaskCustom(string topic, string body, string expression) => AddTaskPriv(topic, body, -1, TaskInterval.Custom, expression);
 
-        string AddTaskPriv(string topic, string body, int round, TaskInterval interval, string argument)
+		string AddTaskPriv(string topic, string body, int round, TaskInterval interval, string argument)
 		{
 			var task = new TaskInfo
 			{
@@ -204,12 +225,12 @@ namespace FreeScheduler
 			AddTaskPriv(task, true);
 			return task.Id;
 		}
-		void AddTaskPriv(TaskInfo task, bool isSave)
+		internal void AddTaskPriv(TaskInfo task, bool isSave)
 		{
 			if (task.Status != TaskStatus.Running) return;
 			if (task.Round != -1 && task.CurrentRound >= task.Round) return;
 			if (task.Interval == TaskInterval.Custom && _taskIntervalCustomHandler == null) throw new Exception($"{task.Id} Custom 未设置 ITaskIntervalCustomHandler");
-			if (_clusterContext != null && _clusterContext.Register(task.Id, nameof(AddTask)) == false) return;
+			if (_clusterContext != null && _clusterContext.Register(task.Id, nameof(AddTask), 0) == false) return;
 			IdleTimeout bus = null;
 			bus = new IdleTimeout(() =>
 			{
@@ -223,39 +244,45 @@ namespace FreeScheduler
 					{
 						Interlocked.Decrement(ref _quantityTask);
 						_clusterContext?.Remove(task.Id, nameof(AddTask));
-                    }
+					}
 				}
 				var remark = task.InternalFlag == 1 ? "[RunNowTask] 立刻运行任务（人工触发）" : "";
+				if (_clusterContext?.IsOffline() == true) //被其他进程判定离线
+				{
+					if (_tasks.TryRemove(task.Id, out var old))
+                        Interlocked.Decrement(ref _quantityTask);
+                    return;
+				}
                 _wq.Enqueue(() =>
 				{
-                    var result = new TaskLog
-                    {
-                        CreateTime = DateTime.UtcNow,
-                        TaskId = task.Id,
-                        Round = currentRound,
+					var result = new TaskLog
+					{
+						CreateTime = DateTime.UtcNow,
+						TaskId = task.Id,
+						Round = currentRound,
 						Remark = remark,
-                        Success = true
-                    };
-                    var startdt = DateTime.UtcNow;
-                    var status = task.Status;
-                    try
-                    {
-                        _taskHandler.OnExecuting(this, task);
-                    }
-                    catch (Exception ex)
-                    {
-                        task.IncrementErrorTimes();
-                        result.Exception = ex.InnerException == null ? $"{ex.Message}\r\n{ex.StackTrace}" : $"{ex.Message}\r\n{ex.StackTrace}\r\n\r\nInnerException: {ex.InnerException.Message}\r\n{ex.InnerException.StackTrace}";
-                        result.Success = false;
-                    }
-                    finally
-                    {
+						Success = true
+					};
+					var startdt = DateTime.UtcNow;
+					var status = task.Status;
+					try
+					{
+						_taskHandler.OnExecuting(this, task);
+					}
+					catch (Exception ex)
+					{
+						task.IncrementErrorTimes();
+						result.Exception = ex.InnerException == null ? $"{ex.Message}\r\n{ex.StackTrace}" : $"{ex.Message}\r\n{ex.StackTrace}\r\n\r\nInnerException: {ex.InnerException.Message}\r\n{ex.InnerException.StackTrace}";
+						result.Success = false;
+					}
+					finally
+					{
 						if (status != task.Status) result.Remark = $"{result.Remark}{(string.IsNullOrEmpty(result.Remark) ? "" : ", ")}[Executing] 任务状态 `{status}` 已转为 `{task.Status}`";
-                        result.ElapsedMilliseconds = (long)DateTime.UtcNow.Subtract(startdt).TotalMilliseconds;
-                        task.LastRunTime = DateTime.UtcNow;
-                        if (round != -1 && currentRound >= round) task.Status = TaskStatus.Completed;
-                        _taskHandler.OnExecuted(this, task, result);
-                    }
+						result.ElapsedMilliseconds = (long)DateTime.UtcNow.Subtract(startdt).TotalMilliseconds;
+						task.LastRunTime = DateTime.UtcNow;
+						if (round != -1 && currentRound >= round) task.Status = TaskStatus.Completed;
+						_taskHandler.OnExecuted(this, task, result);
+					}
 					if (task.Status != TaskStatus.Running) return;
 					if (round == -1 || currentRound < round)
 					{
@@ -276,18 +303,18 @@ namespace FreeScheduler
 					catch
 					{
 						_tasks.TryRemove(task.Id, out var old);
-                        _clusterContext?.Remove(task.Id, nameof(AddTask));
-                        throw;
+						_clusterContext?.Remove(task.Id, nameof(AddTask));
+						throw;
 					}
 				}
 				Interlocked.Increment(ref _quantityTask);
-                var nextTimeSpan = LocalGetNextTimeSpan(task.Status, task.CurrentRound);
+				var nextTimeSpan = LocalGetNextTimeSpan(task.Status, task.CurrentRound);
 				if (nextTimeSpan != null && _ib.TryRegister(task.Id, () => bus, nextTimeSpan.Value))
 					_ib.Get(task.Id);
-            }
+			}
 
 			TimeSpan? LocalGetNextTimeSpan(TaskStatus status, int curRound)
-            {
+			{
 				TimeSpan? nextTimeSpan = null;
 				if (task.Interval == TaskInterval.Custom)
 					nextTimeSpan = _taskIntervalCustomHandler.NextDelay(task);
@@ -299,8 +326,8 @@ namespace FreeScheduler
 					if (_tasks.TryRemove(task.Id, out var old))
 					{
 						Interlocked.Decrement(ref _quantityTask);
-                        _clusterContext?.Remove(task.Id, nameof(AddTask));
-                    }
+						_clusterContext?.Remove(task.Id, nameof(AddTask));
+					}
 					task.Status = TaskStatus.Completed;
 					if (status != task.Status)
 					{
@@ -328,18 +355,34 @@ namespace FreeScheduler
 			{
 				Interlocked.Decrement(ref _quantityTask);
 				_taskHandler.OnRemove(old);
-                _clusterContext?.Remove(id, nameof(AddTask));
-                return _ib.TryRemove(id);
+				_clusterContext?.Remove(id, nameof(AddTask));
+				return _ib.TryRemove(id);
 			}
 			if (_clusterContext?.RemoteCall(id, nameof(AddTask), nameof(RemoveTask), out var result) == true) return result;
 			var task = _taskHandler.Load(id);
 			if (task != null)
-            {
-                _taskHandler.OnRemove(task);
-                _clusterContext?.Remove(id, nameof(AddTask));
-                return true;
+			{
+				_taskHandler.OnRemove(task);
+				_clusterContext?.Remove(id, nameof(AddTask));
+				return true;
 			}
 			return _ib.TryRemove(id);
+		}
+		internal void CancelAllTask()
+		{
+			foreach (var id in _tasks.Keys)
+			{
+				if (_tasks.TryRemove(id, out var old))
+				{
+					Interlocked.Decrement(ref _quantityTask);
+					_ib.TryRemove(id);
+				}
+			}
+			foreach (var id in _ib.GetKeys())
+			{
+				if (id.StartsWith("system_") == false && _ib.TryRemove(id))
+                    Interlocked.Decrement(ref _quantityTempTask);
+			}
 		}
 		/// <summary>
 		/// 判断循环任务是否存在
@@ -347,10 +390,10 @@ namespace FreeScheduler
 		/// <param name="id"></param>
 		/// <returns></returns>
 		public bool ExistsTask(string id)
-        {
+		{
 			if (_tasks.ContainsKey(id)) return true;
-            if (_clusterContext?.RemoteCall(id, nameof(AddTask), nameof(ExistsTask), out var result) == true) return result;
-            return false;
+			if (_clusterContext?.RemoteCall(id, nameof(AddTask), nameof(ExistsTask), out var result) == true) return result;
+			return false;
 		}
 
 		/// <summary>
@@ -366,8 +409,8 @@ namespace FreeScheduler
 		/// <param name="id"></param>
 		/// <returns></returns>
 		public bool ResumeTask(string id)
-        {
-            var task = _taskHandler.Load(id);
+		{
+			var task = _taskHandler.Load(id);
 			if (task == null) return false;
 			if (task.Status != TaskStatus.Paused) return false;
 			var status = task.Status;
@@ -388,12 +431,12 @@ namespace FreeScheduler
 		/// <param name="id"></param>
 		/// <returns></returns>
 		public bool PauseTask(string id)
-        {
-            if (_tasks.TryRemove(id, out var task))
+		{
+			if (_tasks.TryRemove(id, out var task))
 			{
 				Interlocked.Decrement(ref _quantityTask);
-                _clusterContext?.Remove(id, nameof(AddTask));
-                var status = task.Status;
+				_clusterContext?.Remove(id, nameof(AddTask));
+				var status = task.Status;
 				task.Status = TaskStatus.Paused;
 				if (status != task.Status)
 				{
@@ -404,12 +447,12 @@ namespace FreeScheduler
 						Round = task.CurrentRound,
 						Remark = $"[PauseTask] 任务状态 `{status}` 已转为 `{task.Status}`"
 					});
-                }
-                return _ib.TryRemove(id);
-            }
+				}
+				return _ib.TryRemove(id);
+			}
 			if (_clusterContext?.RemoteCall(id, nameof(AddTask), nameof(PauseTask), out var result) == true) return result;
-            return false;
-        }
+			return false;
+		}
 		/// <summary>
 		/// 立刻运行任务（人工触发）
 		/// </summary>
