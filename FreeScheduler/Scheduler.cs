@@ -129,7 +129,7 @@ namespace FreeScheduler
                 _ib.Get(id);
                 Interlocked.Increment(ref _quantityTempTask);
             }
-            if (cluster) _clusterContext?.Register(id, nameof(AddTempTask), (int)timeout.TotalSeconds);
+            if (cluster) _clusterContext?.Register(id, nameof(AddTempTask));
             return id;
         }
         /// <summary>
@@ -234,7 +234,7 @@ namespace FreeScheduler
 			if (task.Status != TaskStatus.Running) return;
 			if (task.Round != -1 && task.CurrentRound >= task.Round) return;
 			if (task.Interval == TaskInterval.Custom && _taskIntervalCustomHandler == null) throw new Exception($"{task.Id} Custom 未设置 {nameof(FreeSchedulerBuilder.UseCustomInterval)}");
-			if (_clusterContext != null && _clusterContext.Register(task.Id, nameof(AddTask), 0) == false) return;
+			if (_clusterContext != null && _clusterContext.Register(task.Id, nameof(AddTask)) == false) return;
 			IdleTimeout bus = null;
 			bus = new IdleTimeout(() =>
 			{

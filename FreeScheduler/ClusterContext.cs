@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Linq;
-using System.Text;
 using System.Threading;
 
 namespace FreeScheduler
@@ -20,7 +19,30 @@ namespace FreeScheduler
         internal void Init(Scheduler scheduler)
         {
             _scheduler = scheduler;
-            _scheduler.AddTempTask(TimeSpan.FromSeconds(5), RefershAndOffline, false);
+            RefershAndOffline();
+            _redis.SubscribeList("freescheduler_cluster_alloc", msg =>
+            {
+                if (string.IsNullOrWhiteSpace(msg)) return;
+                var args = msg.Split('|');
+                var timestamp = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
+                int.TryParse(args[0], out var time);
+                if (timestamp - time > 60 * 5) return; //过滤超过5分钟之前的分配
+                switch (args[1])
+                {
+                    case nameof(ReloadTask):
+                        {
+                            var taskId = args[2];
+                            if (_scheduler._tasks.ContainsKey(taskId)) return;
+                            var task = _scheduler._taskHandler.Load(taskId);
+                            if (task == null) return;
+                            if (task.Status != TaskStatus.Running) return;
+                            if (task.Round != -1 && task.CurrentRound >= task.Round) return;
+                            if (task.Interval == TaskInterval.Custom && _scheduler._taskIntervalCustomHandler == null) return;
+                            _scheduler.AddTaskPriv(task, false);
+                            break;
+                        }
+                }
+            });
             _redis.Subscribe($"freescheduler_cluster_{Name}", (chan, data) =>
             {
                 var msg = data as string;
@@ -158,17 +180,11 @@ return nil", null, timestamp, Name);
                 {
                     if (scan.Any() == false) continue;
                     _redis.Eval($"for a=1,#ARGV do redis.call('zrem','freescheduler_cluster_register_'..KEYS[1],ARGV[a]) if(redis.call('get','freescheduler_cluster_'..ARGV[a])==KEYS[1])then redis.call('del',KEYS[1]) end end return nil", new[] { name } , scan.Select(a => a.member).ToArray());
-                    var taskIds = scan.Where(sr => sr.member.StartsWith("AddTask_")).Select(sr => sr.member.Substring(8)).ToArray(); //忽略内存任务 AddTempTask_
-                    foreach (var taskId in taskIds)
-                    {
-                        if (_scheduler._tasks.ContainsKey(taskId)) continue;
-                        var task = _scheduler._taskHandler.Load(taskId);
-                        if (task == null) continue;
-                        if (task.Status != TaskStatus.Running) continue;
-                        if (task.Round != -1 && task.CurrentRound >= task.Round) continue;
-                        if (task.Interval == TaskInterval.Custom && _scheduler._taskIntervalCustomHandler == null) continue;
-                        _scheduler.AddTaskPriv(task, false);
-                    }
+                    var timestamp = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
+                    var taskIds = scan.Where(sr => sr.member.StartsWith("AddTask_")).Select(sr => sr.member.Substring(8)) //忽略内存任务 AddTempTask_
+                        .Where(taskId => _scheduler._tasks.ContainsKey(taskId) == false)
+                        .Select(taskId => $"{timestamp}|{nameof(ReloadTask)}|{taskId}").ToArray();
+                    _redis.LPush("freescheduler_cluster_alloc", taskIds);
                     break; //数量较多时，延迟处理
                 }
                 if (_redis.ZCard(regkey) > 0)
@@ -185,18 +201,13 @@ return nil", null, timestamp, Name);
             var offline = _redis.HExists("freescheduler_cluster_offline", Name);
             return offline;
         }
-        public bool Register(string id, string targetKey, int timeoutSeconds)
+        public bool Register(string id, string targetKey)
         {
             var timestamp = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
             var keys = new[] { $"freescheduler_cluster_{targetKey}_{id}", $"freescheduler_cluster_register_{Name}" };
-            var result = timeoutSeconds > 0 ?
-                _redis.Eval(@"if(redis.call('setnx',KEYS[1],ARGV[1])==1)then redis.call('expire',KEYS[1],ARGV[4]) redis.call('zadd',KEYS[2],ARGV[2],ARGV[3]) return 1 end
-if(redis.call('hexists','freescheduler_cluster_offline',redis.call('get',KEYS[1]))==1)then redis.call('set',KEYS[1],ARGV[1],'EX',ARGV[4]) redis.call('zadd',KEYS[2],ARGV[2],ARGV[3]) return 1 end return 0", keys,
-                    Name, timestamp, $"{targetKey}_{id}", timeoutSeconds)?.ToString() :
-
-               _redis.Eval(@"if(redis.call('setnx',KEYS[1],ARGV[1])==1)then redis.call('zadd',KEYS[2],ARGV[2],ARGV[3]) return 1 end
-if(redis.call('hexists','freescheduler_cluster_offline',redis.call('get',KEYS[1]))==1)then redis.call('set',KEYS[1],ARGV[1]) redis.call('zadd',KEYS[2],ARGV[2],ARGV[3]) return 1 end return 0", keys,
-                    Name, timestamp, $"{targetKey}_{id}")?.ToString();
+            var result = _redis.Eval(@"if(redis.call('setnx',KEYS[1],ARGV[1])==1)then redis.call('zadd',KEYS[2],ARGV[2],ARGV[3]) return 1 end
+if(redis.call('hexists','freescheduler_cluster_offline',redis.call('get',KEYS[1]))==1)then redis.call('set',KEYS[1],ARGV[1]) redis.call('zadd',KEYS[2],ARGV[2],ARGV[3]) return 1 end return 0", 
+                keys, Name, timestamp, $"{targetKey}_{id}")?.ToString();
 
             return result == "1";
         }
