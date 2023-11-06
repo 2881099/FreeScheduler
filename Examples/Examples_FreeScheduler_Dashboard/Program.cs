@@ -47,18 +47,5 @@ app.UseAuthorization();
 app.UseDefaultFiles().UseStaticFiles();
 app.MapControllers();
 
-// 以下测试与 dashboard 无关
-
-app.MapGet("/add", async ctx =>
-{
-    scheduler.AddTask("test_task", "{}", new int[] { 10, 15, 5, 3, 10 });
-    await ctx.Response.WriteAsync("OK");
-});
-
-app.UseFreeAdminLtePreview("/admin",
-    typeof(FreeScheduler.TaskInfo),
-    typeof(FreeScheduler.TaskLog)
-);
-
 app.Run();
 

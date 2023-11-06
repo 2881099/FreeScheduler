@@ -7,9 +7,10 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="FreeSql.AdminLTE.Preview" Version="3.2.666" />
+		<PackageReference Include="FreeSql.Provider.Sqlite" Version="3.2.802" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 	</ItemGroup>
-
+	
 	<ItemGroup>
 	  <ProjectReference Include="..\..\FreeScheduler\FreeScheduler.csproj" />
 	</ItemGroup>

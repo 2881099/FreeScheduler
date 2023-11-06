@@ -128,6 +128,10 @@ scheduler.RemoveTask(id);
 scheduler.RunNowTask(id);
 ```
 
+示例项目：https://github.com/2881099/FreeScheduler/tree/master/Examples/Examples_FreeScheduler_Dashboard
+
+![image](https://github.com/2881099/FreeSql.Wiki.VuePress/assets/16286519/3fb7dd5d-e7d7-4fe1-8da7-1e0f2e7c208d)
+
 ## Performance
 
 | FreeScheduler | Quartz.net | FluentScheduler | HashedWheelTimer |

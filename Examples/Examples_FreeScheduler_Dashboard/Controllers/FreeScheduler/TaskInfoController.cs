@@ -14,12 +14,12 @@ using System.Reflection;
 using System.Threading.Tasks;
 using TaskStatus = FreeScheduler.TaskStatus;
 
-namespace FreeSql.AdminLTE.Controllers
+namespace FreeSql.FreeScheduler.Controllers
 {
     /// <summary>
     /// 
     /// </summary>
-    [Route("/AdminLTE/[controller]")]
+    [Route("/FreeScheduler/[controller]")]
     public class TaskInfoController : Controller
     {
         IFreeSql fsql;
@@ -50,7 +50,7 @@ namespace FreeSql.AdminLTE.Controllers
         {
             var select = fsql.Select<TaskInfo>()
                 .WhereIf(!string.IsNullOrEmpty(key), a => a.Id.Contains(key) || a.Topic.Contains(key) || a.Body.Contains(key) || a.IntervalArgument.Contains(key));
-            var items = await select.Count(out var count).Page(page, limit).ToListAsync();
+            var items = await select.Count(out var count).Page(page, limit).OrderByDescending(a => a.CreateTime).ToListAsync();
             ViewBag.items = items;
             ViewBag.count = count;
             return View();
@@ -86,29 +86,6 @@ namespace FreeSql.AdminLTE.Controllers
 
             }
             return ApiResult<object>.Success.SetData(taskId);
-        }
-
-        [HttpPost("del")]
-        [ValidateAntiForgeryToken]
-        async public Task<ApiResult> _Del([FromForm] string[] Id)
-        {
-            var items = Id?.Select((a, idx) => new TaskInfo { Id = Id[idx] });
-            var ret = new List<object>();
-            if (items?.Any() == true)
-            {
-                var delitems = await fsql.Select<TaskInfo>(items).ToListAsync();
-                using (var ctx = fsql.CreateDbContext())
-                {
-                    //ret = await ctx.Set<TaskInfo>().RemoveCascadeByDatabaseAsync(...);
-                    var dbset = ctx.Set<TaskInfo>();
-                    ret = dbset.GetType().GetMethod("RemoveRangeCascadeByMemoryOrDatabase", BindingFlags.Instance | BindingFlags.NonPublic)
-                        .Invoke(dbset, new object[] { delitems, false }) as List<object>;
-                    await ctx.SaveChangesAsync();
-                }
-            }
-            var affrows = ret.Count;
-            //var affrows = await fsql.Delete<TaskInfo>().WhereDynamic(items).ExecuteAffrowsAsync();
-            return ApiResult.Success.SetMessage($"更新成功，影响行数：{affrows}");
         }
     }
 }

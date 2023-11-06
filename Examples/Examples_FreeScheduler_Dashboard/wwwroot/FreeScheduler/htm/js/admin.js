@@ -61,6 +61,10 @@ function cms2Pager(count, pageindex, pagesize, qs, pageQueryName) {
 			return '?' + qs_stringify(qs);
 		}
 	};
+	top.pageJump = function (n) {
+		qs[pageQueryName] = n;
+		top.mainViewNav.goto('?' + qs_stringify(qs));
+    }
 	var tpl = '<ul class="pagination" style="margin-top: 0;float:left;">\
 	{%\
 	var for_start = Math.max(1, pageindex - 5);\
@@ -68,22 +72,22 @@ function cms2Pager(count, pageindex, pagesize, qs, pageQueryName) {
 	%}\
 	<li @if="maxpage > 0 && pageindex > 1"><a href="{#getLink(1)}">首页</a></li>\
 	<li @if="maxpage > 0 && pageindex > 1"><a href="{#getLink(pageindex - 1)}">上页</a></li>\
-	<li @if="for_start > 1" class="active"><a href="{#getLink(for_start)}" onclick="return false;">..</a></li>\
+	<li @if="for_start > 1"><a href="#" onclick="return false;">..</a></li>\
 	{for a for_start,for_end + 1}\
 	<li @if="a == pageindex" class="active"><a href="{#getLink(a)}" onclick="return false;">{#a}</a></li>\
 	<li @else=""><a href="{#getLink(a)}">{#a}</a></li>\
 	{/for}\
-	<li @if="for_end < maxpage" class="active"><a href="{#getLink(for_end)}" onclick="return false;">..</a></li>\
+	<li @if="for_end < maxpage"><a href="#" onclick="return false;">..</a></li>\
 	<li @if="pageindex < maxpage"><a href="{#getLink(pageindex + 1)}">下页</a></li>\
 	<li @if="pageindex < maxpage"><a href="{#getLink(maxpage)}">尾页</a></li>\
-	<li><span>页数：{#pageindex}/{#maxpage} 每页：{#pagesize} 总计：{#count}</span></li>\
+	<li><span>页数：<input @if="maxpage >= 10" type="number" value="{#pageindex}" onkeyup="if(event.keyCode==13)top.pageJump(this.value);" style="font-size:10px;margin:0;padding:0;width:80px;height:20px;" /><span @else="">{#pageindex}</span>/{#maxpage} 每页：{#pagesize} 总计：{#count}</span></li>\
   </ul>';
 	return bmwjs.render(tpl, data);
 }
 function cms2Filter(schema, query_all) {
 	//query_all = qs;
 	//schema = [
-	//	{ name: '性别', field: 'sex', text: ['男,女'], value: [1,0] },
+	//	{ name: '性别', field: 'sex', single: 1, text: ['男,女'], value: [1,0] },
 	//	{ name: '学历', field: 'edu', text: ['博士','硕士','本科','专科','其他'], value: [1,2,3,4,5] },
 	//	{ name: '学校类别', field: 'school_type', text: [985,921] },
 	//	{ name: '届次', field: 'xzyear', text: [2012,2013,2014,2015,2016] },
@@ -91,11 +95,11 @@ function cms2Filter(schema, query_all) {
 	//];
 	for (var a = 0; a < schema.length; a++) {
 		if (!schema[a].value) schema[a].value = schema[a].text;
-		var sb = '<div style="line-height:36px;border-bottom:1px solid #ddd;word-wrap:break-word;word-break:break-all;">\
-			<div style="float:left;width:100px;">{1}</div>\
-			<div style="float:left;"><a name="a_{0}_all" field="{0}" href="#" style="padding:3px 6px 3px 6px;background-color:#eee;">全部</a>&nbsp;'.format(schema[a].field, schema[a].name);
+		var sb = '<div style="line-height:36px;border-bottom:1px solid #ddd;word-wrap:break-word;word-break:break-all;{2}">\
+			<div style="float:left;width:70px;">{1}</div>\
+			<div style="margin-left:70px;"><a name="a_{0}_all" field="{0}" href="#" style="padding:3px 6px 3px 6px;background-color:#eee;">全部</a>&nbsp;'.format(schema[a].field, schema[a].name, schema[a].style);
 		for (var b = 0; b < schema[a].value.length; b++)
-			sb += '<a id="a_{0}_id_{1}" name="a_{0}_id" field="{0}" value="{2}" href="#" style="padding:3px 6px 3px 6px;background-color:#eee;">{3}</a>&nbsp;'.format(schema[a].field, b, schema[a].value[b], String(schema[a].text[b]).htmlencode());
+			sb += '<a id="a_{0}_id_{1}" name="a_{0}_id" field="{0}" value="{3}" single="{2}" href="#" style="padding:3px 6px 3px 6px;background-color:#eee;">{4}</a>&nbsp;'.format(schema[a].field, b, schema[a].single, schema[a].value[b], schema[a].text[b]);
 		sb += '</div><div style="clear:both;"></div></div>';
 		$('#form_search div#div_filter').append(sb);
 		var qs_field = query_all[schema[a].field];
@@ -113,6 +117,7 @@ function cms2Filter(schema, query_all) {
 		var field = ele.attr('field');
 		var value = ele.attr('value');
 		if (!value) delete query_all[field]; //清除条件
+		else if (ele.attr('single') == '1') query_all[field] = value;
 		else if (!query_all[field]) query_all[field] = value;
 		else {
 			var issel = true;
@@ -132,6 +137,19 @@ function cms2Filter(schema, query_all) {
 function fillForm(form, obj) {
 	$('form#form_add input[type="submit"]').val(obj ? '更新' : '添加');
 	if (!obj || !form) return;
+	var newObj = {};
+	for (var a in obj) {
+		if (typeof obj[a] == 'object') {
+			for (var b in obj[a])
+				if (typeof obj[a][b] == 'object') {
+					for (var c in obj[a][b])
+						newObj[a + '.' + b + '.' + c] = obj[a][b][c];
+				} else
+					newObj[a + '.' + b] = obj[a][b];
+		}
+		newObj[a] = obj[a];
+	}
+	obj = newObj;
 	for (var a in obj)
 		if (form[a])
 			if (String(form[a].type).toLowerCase() === 'checkbox') form[a].checked = obj[a] === '1';
@@ -174,7 +192,7 @@ function admin_init($, nav) {
 		if (ele_href.indexOf(tmp1) != -1) {
 			document.title2 = document.title2 || document.title;
 			document.title = title + ' - ' + document.title2;
-			$('#box-title:first').html(title + ' <font color="#aaa">({0})</font>'.format(nav.url));
+			$('#box-title:first').html(title + ' <!--font color="#ccc" style="font-size:6px">({0})</font-->'.format(nav.url));
 			break;
 		}
 	}
@@ -215,12 +233,12 @@ function admin_init($, nav) {
 	//处理table中长文本显示问题
 	$('form#form_list td').each(function (index, ele) {
 		var html = ele.innerHTML;
-		if (!/<[^>]+>/gi.test(html)) {
-			if (html.getLength() > 36) $(ele).html('').append($('<div></div>').attr('title', html).html(html.left(36) + '...'));
-		} else $(ele).find('a').each(function(index, ele) {
-			var html = ele.innerHTML;
-			if (html.getLength() > 36) $(ele).html(html.left(36) + '...').attr('title', html);
-		});
+		//if (!/<[^>]+>/gi.test(html)) {
+		//	if (html.getLength() > 36) $(ele).html('').append($('<div></div>').attr('title', html).html(html.left(36) + '...'));
+		//} else $(ele).find('a').each(function(index, ele) {
+		//	var html = ele.innerHTML;
+		//	if (html.getLength() > 36) $(ele).html(html.left(36) + '...').attr('title', html);
+		//});
 	});
 	$('img').each(function (idx, ele) {
 		ele = $(ele);
@@ -230,8 +248,11 @@ function admin_init($, nav) {
 	$('a').click(function () {
 		var href = $(this).attr('href');
 		if (!href || href.substr(0, 1) === '#') return false;
-		nav.goto(href, $(this).attr('target'));
-		return false;
+		var target = $(this).attr('target');
+		if (target != "_blank") {
+			nav.goto(href, target);
+			return false;
+		}
 	});
 	$('form').submit(function () {
 		if (this.method.toLowerCase() == 'post') {

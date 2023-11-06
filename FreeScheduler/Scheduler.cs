@@ -336,8 +336,9 @@ namespace FreeScheduler
 							CreateTime = DateTime.UtcNow,
 							TaskId = task.Id,
 							Round = task.CurrentRound,
-							Remark = $"[NextInterval] 任务状态 `{status}` 已转为 `{task.Status}`"
-						});
+							Remark = $"[NextInterval] 任务状态 `{status}` 已转为 `{task.Status}`",
+                            Success = true,
+                        });
 					}
 					return null;
 				}
@@ -420,7 +421,8 @@ namespace FreeScheduler
 				CreateTime = DateTime.UtcNow,
 				TaskId = task.Id,
 				Round = task.CurrentRound,
-				Remark = $"[ResumeTask] 任务状态 `{status}` 已转为 `{task.Status}`"
+				Remark = $"[ResumeTask] 任务状态 `{status}` 已转为 `{task.Status}`",
+				Success = true,
 			});
 			AddTaskPriv(task, false);
 			return true;
@@ -445,8 +447,9 @@ namespace FreeScheduler
 						CreateTime = DateTime.UtcNow,
 						TaskId = task.Id,
 						Round = task.CurrentRound,
-						Remark = $"[PauseTask] 任务状态 `{status}` 已转为 `{task.Status}`"
-					});
+						Remark = $"[PauseTask] 任务状态 `{status}` 已转为 `{task.Status}`",
+                        Success = true,
+                    });
 				}
 				return _ib.TryRemove(id);
 			}
@@ -483,9 +486,9 @@ namespace FreeScheduler
 					CreateTime = DateTime.UtcNow,
 					TaskId = task.Id,
 					Round = currentRound,
-					Success = true,
-					Remark = $"[RunNowTask] 立刻运行任务（人工触发）"
-				};
+					Remark = $"[RunNowTask] 立刻运行任务（人工触发）",
+                    Success = true,
+                };
 				var startdt = DateTime.UtcNow;
 				var status = task.Status;
 				try

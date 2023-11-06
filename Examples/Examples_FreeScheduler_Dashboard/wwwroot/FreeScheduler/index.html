@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8" />
 	<meta http-equiv="X-UA-Compatible" content="IE=edge" />
-	<title>FreeSql.AdminLTE</title>
+	<title>FreeScheduler</title>
 	<meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport" />
 	<link href="./htm/bootstrap/css/bootstrap.min.css" rel="stylesheet" />
 	<link href="./htm/plugins/font-awesome/css/font-awesome.min.css" rel="stylesheet" />
@@ -40,37 +40,14 @@
 		<!-- Main Header-->
 		<header class="main-header">
 			<!-- Logo--><a href="./" class="logo">
-				<!-- mini logo for sidebar mini 50x50 pixels--><span class="logo-mini"><b>FreeSql.AdminLTE</b></span>
-				<!-- logo for regular state and mobile devices--><span class="logo-lg"><b>FreeSql.AdminLTE</b></span>
+				<!-- mini logo for sidebar mini 50x50 pixels--><span class="logo-mini"><b>Free</b></span>
+				<!-- logo for regular state and mobile devices--><span class="logo-lg"><b>FreeScheduler</b></span>
 			</a>
 			<!-- Header Navbar-->
 			<nav role="navigation" class="navbar navbar-static-top">
 				<!-- Sidebar toggle button--><a href="#" data-toggle="offcanvas" role="button" class="sidebar-toggle"><span class="sr-only">Toggle navigation</span></a>
 				<!-- Navbar Right Menu-->
 				<div class="navbar-custom-menu">
-					<ul class="nav navbar-nav">
-						<!-- User Account Menu-->
-						<li class="dropdown user user-menu">
-							<!-- Menu Toggle Button--><a href="#" data-toggle="dropdown" class="dropdown-toggle">
-								<!-- The user image in the navbar--><img src="./htm/img/user2-160x160.jpg" alt="User Image" class="user-image">
-								<!-- hidden-xs hides the username on small devices so only the image appears.--><span class="hidden-xs"></span>
-							</a>
-							<ul class="dropdown-menu">
-								<!-- The user image in the menu-->
-								<li class="user-header">
-									<img src="./htm/img/user2-160x160.jpg" alt="User Image" class="img-circle">
-									<p></p>
-								</li>
-								<!-- Menu Footer-->
-								<li class="user-footer">
-									<div class="pull-right">
-										<a href="#" onclick="$('form#form_logout').submit();return false;" class="btn btn-default btn-flat">安全退出</a>
-										<form id="form_logout" method="post" action="./exit.aspx"></form>
-									</div>
-								</li>
-							</ul>
-						</li>
-					</ul>
 				</div>
 			</nav>
 		</header>
@@ -84,10 +61,21 @@
 
 					<li class="treeview active">
 						<a href="#"><i class="fa fa-laptop"></i><span>通用管理</span><i class="fa fa-angle-left pull-right"></i></a>
-						<ul class="treeview-menu"><li><a href="/AdminLTE/TaskInfo/"><i class="fa fa-battery-1"></i>TaskInfo</a></li>
-<li><a href="/AdminLTE/TaskLog/"><i class="fa fa-comments-o"></i>TaskLog</a></li></ul>
+						<ul class="treeview-menu">
+							<li><a href="/FreeScheduler/TaskInfo/"><i class="fa fa-sort-amount-desc"></i>任务列表</a></li>
+							<li><a href="/FreeScheduler/TaskLog/"><i class="fa fa-headphones"></i>输出日志</a></li>
+						</ul>
 					</li>
 
+					<li class="treeview active">
+						<a href="#"><i class="fa fa-laptop"></i><span>开发文档</span><i class="fa fa-angle-left pull-right"></i></a>
+						<ul class="treeview-menu">
+							<li><a href="https://freesql.net/guide/freescheduler.html" target="_blank"><i class="fa fa-circle-o"></i>FreeScheduler</a></li>
+							<li><a href="https://freesql.net/" target="_blank"><i class="fa fa-circle-o"></i>FreeSql</a></li>
+							<li><a href="https://freesql.net/guide/freeredis.html" target="_blank"><i class="fa fa-circle-o"></i>FreeRedis</a></li>
+							<li><a href="https://freesql.net/guide/freeim.html" target="_blank"><i class="fa fa-circle-o"></i>FreeIM</a></li>
+						</ul>
+					</li>
 				</ul>
 				<!-- /.sidebar-menu-->
 			</section>
@@ -99,14 +87,7 @@
 			<section id="right_content" class="content">
 				<div style="display:none;">
 					<!-- Your Page Content Here-->
-					<h1>FreeSql.AdminLTE 中件间</h1>
-					<h3>
-.NETCore MVC 中间件扩展包，基于 AdminLTE 前端框架动态产生 FreeSql 实体的增删查改界面。
-					</h3>
-					<h2>&nbsp;</h2>
-					<h2>QQ群：4336577(已满)、8578575(在线)、52508226(在线)</h2>
-					<h2>&nbsp;</h2>
-					<h2>开源地址：<a href='https://github.com/2881099/FreeSql' target='_blank'>https://github.com/2881099/FreeSql</a><h2>
+					Loading...
 				</div>
 			</section>
 			<!-- /.content-->
@@ -115,7 +96,7 @@
 	</div>
 	<!-- ./wrapper-->
 	<script type="text/javascript" src="./htm/js/system.js"></script>
-	<script type="text/javascript" src="./htm/js/admin.js"></script>
+	<script type="text/javascript" src="./htm/js/admin.js?v=1"></script>
 	<script type="text/javascript">
 		if (!location.hash) $('#right_content div:first').show();
 		// 路由功能
@@ -123,11 +104,13 @@
 		function hash_encode(str) { return url_encode(base64.encode(str)).replace(/%/g, '_'); }
 		function hash_decode(str) { return base64.decode(url_decode(str.replace(/_/g, '%'))); }
 		window.div_left_router = {};
-		$('li.treeview.active ul li a').each(function(index, ele) {
+		$('li.treeview.active ul li a').each(function (index, ele) {
+			if (ele.target == '_blank') return;
 			var href = $(ele).attr('href');
 			$(ele).attr('href', '#base64url' + hash_encode(href));
 			window.div_left_router[href] = $(ele).text();
-		});
+        });
+        if (!location.hash) $('li.treeview.active ul li a')[0].click();
 		(function () {
 			function Vipspa() {
 			}
