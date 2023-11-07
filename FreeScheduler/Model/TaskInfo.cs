@@ -65,7 +65,7 @@ namespace FreeScheduler
 
 		internal int InternalFlag { get; set; }
 
-		public TimeSpan? GetInterval(int curRound)
+        public TimeSpan? GetInterval(int curRound)
 		{
 			if (curRound > Round) curRound = Round;
 			if (curRound < 0) curRound = 0;

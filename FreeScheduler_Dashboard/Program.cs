@@ -36,6 +36,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSingleton(fsql);
+builder.Services.AddSingleton(redis);
 builder.Services.AddSingleton(scheduler);
 var app = builder.Build();
 

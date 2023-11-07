@@ -9,6 +9,9 @@
 	</div>
 	<div class="box-body">
 		<div class="table-responsive">
+			<form id="form_search">
+				<div id="div_filter"></div>
+			</form>
 			<form id="form_list" action="./del" method="post">
 				<input type="hidden" name="__callback" value="del_callback"/>
 				<table id="GridView1" cellspacing="0" rules="all" border="1" style="border-collapse:collapse;" class="table table-bordered table-hover text-nowrap">
@@ -64,6 +67,19 @@
 	</div>
 </div>
 
+@{
+	var clusters = ViewBag.clusters as FreeRedis.ZMember[];
+	var clustersTasks = ViewBag.clustersTasks as int[];
+	var timestamp = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
+
+	string getClusterText(int index, FreeRedis.ZMember member) 
+	{
+		if (timestamp - member.score < 10) return $"{member.member}({clustersTasks[index]})";
+		if (timestamp - member.score < 30) return $"<font color=red>{member.member}({clustersTasks[index]})[可能离线]</font>";
+		return $"<font color=red>{member.member}({clustersTasks[index]})[离线]</font>";
+	}
+}
+
 <script type="text/javascript">
 	(function () {
 		top.callTask = function(opt, id) {
@@ -91,6 +107,8 @@
 		var fqs = _clone(top.mainViewNav.query);
 		delete fqs.page;
 		var fsc = [
+			{ name: '进程', field: 'pid', single: 1, text: @Html.Json(clusters.Select((a, index) => getClusterText(index, a))), value: @Html.Json(clusters.Select(a => a.member)) },
+			{ name: '状态', field: 'status', single: 1, text: ['运行中','暂停中','已完成'], value: [0,1,2] },
 			null
 		];
 		fsc.pop();

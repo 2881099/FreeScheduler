@@ -31,6 +31,7 @@ namespace FreeScheduler
         internal ITaskIntervalCustomHandler _taskIntervalCustomHandler;
         internal ConcurrentDictionary<string, TaskInfo> _tasks = new ConcurrentDictionary<string, TaskInfo>();
 		internal ClusterContext _clusterContext;
+		public string ClusterId => _clusterContext.Name;
 
 		#region Dispose
 		~Scheduler() => Dispose();
@@ -238,8 +239,8 @@ namespace FreeScheduler
 			IdleTimeout bus = null;
 			bus = new IdleTimeout(() =>
 			{
-				if (_ib.TryRemove(task.Id) == false) return;
-				var currentRound = task.IncrementCurrentRound();
+				if (_ib.TryRemove(task.Id) == false && task.InternalFlag == 0) return;
+                var currentRound = task.IncrementCurrentRound();
 				var round = task.Round;
 				if (task.Status != TaskStatus.Running) return;
 				if (round != -1 && currentRound >= round)
@@ -467,18 +468,18 @@ namespace FreeScheduler
 		/// <returns></returns>
 		public bool RunNowTask(string id)
 		{
-			if (_tasks.TryGetValue(id, out var task) && _ib.Exists(id))
-			{
+			if (_tasks.TryGetValue(id, out var task))
+            {
+				if (_ib.Exists(id) == false) return false; //正在触发
 				task.InternalFlag = 1;
 				try
 				{
-					_ib.Get(id).Dispose(); //立即触发
+					return _ib.TryRemove(id, true); //立即触发
 				}
 				finally
 				{
 					task.InternalFlag = 0;
 				}
-				return true;
 			}
 			if (_clusterContext?.RemoteCall(id, nameof(AddTask), nameof(RunNowTask), out var result2) == true) return result2;
 			task = _taskHandler.Load(id);

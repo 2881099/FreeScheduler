@@ -1,5 +1,8 @@
-﻿using FreeScheduler;
+﻿using FreeRedis;
+using FreeScheduler;
 using Microsoft.AspNetCore.Mvc;
+using System.Diagnostics.Metrics;
+using TaskStatus = FreeScheduler.TaskStatus;
 
 namespace FreeSql.FreeScheduler.Controllers
 {
@@ -10,10 +13,12 @@ namespace FreeSql.FreeScheduler.Controllers
     public class TaskInfoController : Controller
     {
         IFreeSql fsql;
+        RedisClient redis;
         Scheduler scheduler;
-        public TaskInfoController(IFreeSql orm, Scheduler scheduler)
+        public TaskInfoController(IFreeSql orm, RedisClient redis, Scheduler scheduler)
         {
             fsql = orm;
+            this.redis = redis;
             this.scheduler = scheduler;
         }
 
@@ -33,13 +38,52 @@ namespace FreeSql.FreeScheduler.Controllers
         }
 
         [HttpGet]
-        async public Task<ActionResult> List([FromQuery] string key, [FromQuery] int limit = 20, [FromQuery] int page = 1)
+        async public Task<ActionResult> List([FromQuery] string key, [FromQuery] string pid, [FromQuery] TaskStatus? status, [FromQuery] int limit = 20, [FromQuery] int page = 1)
         {
-            var select = fsql.Select<TaskInfo>()
-                .WhereIf(!string.IsNullOrEmpty(key), a => a.Id.Contains(key) || a.Topic.Contains(key) || a.Body.Contains(key) || a.IntervalArgument.Contains(key));
-            var items = await select.Count(out var count).Page(page, limit).OrderByDescending(a => a.CreateTime).ToListAsync();
-            ViewBag.items = items;
-            ViewBag.count = count;
+            var clusters = await redis.ZRangeByScoreWithScoresAsync("freescheduler_cluster", "-inf", "+inf");
+            var clustersTasks = new int[clusters.Length];
+            if (clusters.Any()) {
+                using (var pipe = redis.StartPipe())
+                {
+                    foreach (var cluster in clusters)
+                        pipe.ZCard($"freescheduler_cluster_register_{cluster.member}");
+                    var ret = pipe.EndPipe();
+                    for (var a = 0; a < ret.Length; a++)
+                        clustersTasks[a] = int.TryParse(ret[a]?.ToString() ?? "0", out var tryint) ? tryint : 0;
+                }
+                var clustersOrder = clusters.Select((a, index) => new { cluster = a, count = clustersTasks[index] })
+                    .OrderByDescending(a => a.cluster.member == scheduler.ClusterId ? int.MaxValue : a.count)
+                    .ThenBy(a => a.cluster.member).ToArray();
+                clusters = clustersOrder.Select(a => a.cluster).ToArray();
+                clustersTasks = clustersOrder.Select(a => a.count).ToArray();
+
+            }
+            if (clusters.Any(a => a.member == pid))
+            {
+                var taskIds = await redis.ZRevRangeByLexAsync($"freescheduler_cluster_register_{pid}", "+", "-", Math.Max(0, page - 1) * 20, 20);
+                if (taskIds.Any())
+                {
+                    taskIds = taskIds.Where(a => a.StartsWith("AddTask_")).Select(a => a.Substring(8)).ToArray();
+                    var items = await fsql.Select<TaskInfo>()
+                        .WhereIf(status != null, a => a.Status == status)
+                        .Where(a => taskIds.Contains(a.Id)).OrderByDescending(a => a.Id).ToListAsync();
+                    ViewBag.items = items;
+                }
+                else
+                    ViewBag.items = new List<TaskInfo>();
+                ViewBag.count = clusters.Where((a, index) => a.member == pid).Select((a, index) => clustersTasks[index]).FirstOrDefault();
+            }
+            else
+            {
+                var select = fsql.Select<TaskInfo>()
+                    .WhereIf(status != null, a => a.Status == status)
+                    .WhereIf(!string.IsNullOrEmpty(key), a => a.Id.Contains(key) || a.Topic.Contains(key));
+                var items = await select.Count(out var count).Page(page, limit).OrderByDescending(a => a.CreateTime).ToListAsync();
+                ViewBag.items = items;
+                ViewBag.count = count;
+            }
+            ViewBag.clusters = clusters;
+            ViewBag.clustersTasks = clustersTasks;
             return View();
         }
 
@@ -49,7 +93,7 @@ namespace FreeSql.FreeScheduler.Controllers
         /***************************************** POST *****************************************/
 
         [HttpPost("add")]
-        async public Task<ApiResult> _Add([FromForm] string Topic, [FromForm] string Body, [FromForm] int Round, [FromForm] TaskInterval Interval, [FromForm] string IntervalArgument)
+        public ApiResult _Add([FromForm] string Topic, [FromForm] string Body, [FromForm] int Round, [FromForm] TaskInterval Interval, [FromForm] string IntervalArgument)
         {
             string taskId = null;
             switch (Interval)
