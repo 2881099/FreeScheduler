@@ -43,61 +43,62 @@ namespace FreeScheduler
                         }
                 }
             });
-            _redis.Subscribe($"freescheduler_cluster_{Name}", (chan, data) =>
+            _redis.Subscribe($"freescheduler_cluster_{Name}", SubscribeName);
+        }
+        void SubscribeName(string chan, object data)
+        {
+            var msg = data as string;
+            if (string.IsNullOrWhiteSpace(msg)) return;
+            var args = msg.Split('|');
+            var timestamp = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
+            int.TryParse(args[0], out var time);
+            if (timestamp - time > 60 * 5) return; //过滤超过5分钟之前的命令
+            switch (args[1])
             {
-                var msg = data as string;
-                if (string.IsNullOrWhiteSpace(msg)) return;
-                var args = msg.Split('|');
-                var timestamp = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
-                int.TryParse(args[0], out var time);
-                if (timestamp - time > 60*5) return; //过滤超过5分钟之前的命令
-                switch (args[1])
-                {
-                    case nameof(Scheduler.RemoveTempTask):
-                        {
-                            var result = _scheduler.RemoveTempTask(args[2]) ? 1 : 0;
-                            _redis.Publish($"freescheduler_cluster_{args[3]}", $"{timestamp}|response|{args[4]}|{result}");
-                            break;
-                        }
-                    case nameof(Scheduler.ExistsTempTask):
-                        {
-                            var result = _scheduler.ExistsTempTask(args[2]) ? 1 : 0;
-                            _redis.Publish($"freescheduler_cluster_{args[3]}", $"{timestamp}|response|{args[4]}|{result}");
-                            break;
-                        }
-                    case nameof(Scheduler.RemoveTask):
-                        {
-                            var result = _scheduler.RemoveTask(args[2]) ? 1 : 0;
-                            _redis.Publish($"freescheduler_cluster_{args[3]}", $"{timestamp}|response|{args[4]}|{result}");
-                            break;
-                        }
-                    case nameof(Scheduler.ExistsTask):
-                        {
-                            var result = _scheduler.ExistsTask(args[2]) ? 1 : 0;
-                            _redis.Publish($"freescheduler_cluster_{args[3]}", $"{timestamp}|response|{args[4]}|{result}");
-                            break;
-                        }
-                    case nameof(Scheduler.PauseTask):
-                        {
-                            var result = _scheduler.PauseTask(args[2]) ? 1 : 0;
-                            _redis.Publish($"freescheduler_cluster_{args[3]}", $"{timestamp}|response|{args[4]}|{result}");
-                            break;
-                        }
-                    case nameof(Scheduler.RunNowTask):
-                        {
-                            var result = _scheduler.RunNowTask(args[2]) ? 1 : 0;
-                            _redis.Publish($"freescheduler_cluster_{args[3]}", $"{timestamp}|response|{args[4]}|{result}");
-                            break;
-                        }
-                    case "response":
-                        if (_responseWait.TryGetValue(args[2], out var wait))
-                        {
-                            wait.Result = args[3];
-                            wait.Wait.Set();
-                        }
+                case nameof(Scheduler.RemoveTempTask):
+                    {
+                        var result = _scheduler.RemoveTempTask(args[2]) ? 1 : 0;
+                        _redis.Publish($"freescheduler_cluster_{args[3]}", $"{timestamp}|response|{args[4]}|{result}");
                         break;
-                }
-            });
+                    }
+                case nameof(Scheduler.ExistsTempTask):
+                    {
+                        var result = _scheduler.ExistsTempTask(args[2]) ? 1 : 0;
+                        _redis.Publish($"freescheduler_cluster_{args[3]}", $"{timestamp}|response|{args[4]}|{result}");
+                        break;
+                    }
+                case nameof(Scheduler.RemoveTask):
+                    {
+                        var result = _scheduler.RemoveTask(args[2]) ? 1 : 0;
+                        _redis.Publish($"freescheduler_cluster_{args[3]}", $"{timestamp}|response|{args[4]}|{result}");
+                        break;
+                    }
+                case nameof(Scheduler.ExistsTask):
+                    {
+                        var result = _scheduler.ExistsTask(args[2]) ? 1 : 0;
+                        _redis.Publish($"freescheduler_cluster_{args[3]}", $"{timestamp}|response|{args[4]}|{result}");
+                        break;
+                    }
+                case nameof(Scheduler.PauseTask):
+                    {
+                        var result = _scheduler.PauseTask(args[2]) ? 1 : 0;
+                        _redis.Publish($"freescheduler_cluster_{args[3]}", $"{timestamp}|response|{args[4]}|{result}");
+                        break;
+                    }
+                case nameof(Scheduler.RunNowTask):
+                    {
+                        var result = _scheduler.RunNowTask(args[2]) ? 1 : 0;
+                        _redis.Publish($"freescheduler_cluster_{args[3]}", $"{timestamp}|response|{args[4]}|{result}");
+                        break;
+                    }
+                case "response":
+                    if (_responseWait.TryGetValue(args[2], out var wait))
+                    {
+                        wait.Result = args[3];
+                        wait.Wait.Set();
+                    }
+                    break;
+            }
         }
         public class ClusterResponseWait : IDisposable
         {
@@ -161,7 +162,11 @@ return nil", null, timestamp, Name);
             {
                 _scheduler.CancelAllTask();
                 if (timestamp - _redis.HGet<int>("freescheduler_cluster_offline", Name) > 60 * 5)
-                    this.Name = Guid.NewGuid().ToString("n") + "_renew"; //离线超过5分钟，取消本进程任务，重新生成 Name
+                {
+                    _redis.UnSubscribe($"freescheduler_cluster_{Name}");
+                    Name = Guid.NewGuid().ToString("n") + "_renew"; //离线超过5分钟，取消本进程任务，重新生成 Name
+                    _redis.Subscribe($"freescheduler_cluster_{Name}", SubscribeName);
+                }
                 return;
             }
             var trobjs = timeoutResult as object[];
