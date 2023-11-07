@@ -8,16 +8,15 @@ var fsql = new FreeSql.FreeSqlBuilder()
     .UseConnectionString(FreeSql.DataType.Sqlite, @"Data Source=test1.db;Pooling=true")
     .UseAutoSyncStructure(true)
     .UseNoneCommandParameter(true)
-    .UseMonitorCommand(cmd => Console.WriteLine(cmd.CommandText + "\r\n"))
+    //.UseMonitorCommand(cmd => Console.WriteLine(cmd.CommandText + "\r\n"))
     .Build();
 
 var redis = new RedisClient("127.0.0.1,poolsize=10,exitAutoDisposePool=false");
 redis.Serialize = obj => JsonConvert.SerializeObject(obj);
 redis.Deserialize = (json, type) => JsonConvert.DeserializeObject(json, type);
-redis.Notice += (s, e) => Console.Write(e.Log);
+//redis.Notice += (s, e) => Console.Write(e.Log);
 
-Scheduler scheduler = null;
-scheduler = new FreeSchedulerBuilder()
+Scheduler scheduler = new FreeSchedulerBuilder()
     .OnExecuting(task =>
     {
         Console.WriteLine($"[{DateTime.Now.ToString("HH:mm:ss.fff")}] {task.Topic} ±»Ö´ÐÐ");

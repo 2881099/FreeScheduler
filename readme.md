@@ -1,4 +1,4 @@
-FreeScheduler 是利用 IdleBus 实现的轻量化定时任务调度，支持临时的延时任务和重复循环任务(可持久化)，可按秒，每天/每周/每月固定时间，自定义间隔执行，支持 .NET Core 2.1+、.NET Framework 4.0+ 运行环境。
+FreeScheduler 是利用 IdleBus 实现的轻量化定时任务调度，支持集群、临时的延时任务和重复循环任务(可持久化)，可按秒，每天/每周/每月固定时间，自定义间隔执行，支持 .NET Core 2.1+、.NET Framework 4.0+ 运行环境。
 
 > IdleScheduler 已正式改名为 FreeScheduler
 
@@ -11,20 +11,17 @@ FreeScheduler 是利用 IdleBus 实现的轻量化定时任务调度，支持临
 > Install-Package FreeScheduler
 
 ```c#
-class xxx
-{
-    public static Scheduler scheduler = new FreeSchedulerBuilder()
-        .OnExecuting(task =>
+static Scheduler scheduler = new FreeSchedulerBuilder()
+    .OnExecuting(task =>
+    {
+        Console.WriteLine($"[{DateTime.Now.ToString("HH:mm:ss.fff")}] {task.Topic} 被执行");
+        switch (task.Topic)
         {
-            Console.WriteLine($"[{DateTime.Now.ToString("HH:mm:ss.fff")}] {task.Topic} 被执行");
-            switch (task.Topic)
-            {
-                case "order_cancel": OrderCancel(task.Body); break;
-                case "order_msg": OrderMsg(task.Body); break;
-            }
-        })
-        .Build();
-}
+            case "武林大会": Wulin(task.Body); break;
+            case "攻城活动": AttackCity(task.Body); break;
+        }
+    })
+    .Build();
 ```
 
 | Method | 说明 |
@@ -32,9 +29,9 @@ class xxx
 | OnExecuting(Action\<TaskInfo\> executing) | 任务触发 |
 | UseFreeSql() | 基于 数据库，使用 FreeSql ORM 持久化 |
 | UseFreeRedis() | 基于 Redis，使用 FreeRedis 持久化 |
-| UseCluster() | 开启集群（依赖 Redis），支持跨进程互通，进程离线后其他进程重新加载任务 |
-| UseCustomInterval(Func\<TaskInfo, TimeSpan?\> nextDelay) | 自定义间隔（可实现 cron） |
-| UseScanInterval() | 扫描线程间隔（默认值：200毫秒），值越小触发精准，试试 1ms |
+| UseCluster() | 开启集群（依赖 Redis），支持跨进程互通 |
+| UseCustomInterval() | 自定义间隔（可实现 cron） |
+| UseScanInterval() | 扫描间隔（默认200ms），值越小触发精准 |
 | Build() | 创建 Scheduler 对象 |
 
 ## 集群特性
