@@ -170,7 +170,7 @@ return nil", null, timestamp, Name);
                 return;
             }
             var trobjs = timeoutResult as object[];
-            if (trobjs.Length != 2 && trobjs[1]?.ToString() != "1") return; //只有一个进程获得 ReloadTask 权
+            if (trobjs.Length != 2 || trobjs[1]?.ToString() != "1") return; //只有一个进程获得 ReloadTask 权
             var timeoutName = trobjs[0]?.ToString();
             if (string.IsNullOrWhiteSpace(timeoutName)) return;
             _redis.ZRem("freescheduler_cluster", timeoutName);
