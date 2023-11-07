@@ -153,7 +153,7 @@
         </member>
         <member name="F:FreeScheduler.TaskInterval.Custom">
             <summary>
-            自定义触发，new Scheduler(.., new YourCustomHandler())
+            自定义触发，要求设置 UseCustomInterval
             </summary>
         </member>
         <member name="M:FreeScheduler.ITaskIntervalCustomHandler.NextDelay(FreeScheduler.TaskInfo)">

@@ -77,6 +77,8 @@ var id = scheduler.AddTaskRunOnWeek("topic1", "body1", round: 1, "1:20:00:00");
 
 //每月1日 20:00:00 触发，指定utc时间，执行12次
 var id = scheduler.AddTaskRunOnMonth("topic1", "body1", round: 12, "1:20:00:00");
+//每月最后一日 20:00:00 触发，指定utc时间，执行12次
+var id = scheduler.AddTaskRunOnMonth("topic1", "body1", round: 12, "-1:20:00:00");
 
 //自定义间隔 cron
 var id = scheduler.AddTaskCustom("topic1", "body1", "0/1 * * * * ? ");

@@ -9,11 +9,7 @@
 	</div>
 	<div class="box-body">
 		<div class="table-responsive">
-			<form id="form_search">
-				<div id="div_filter"></div>
-			</form>
 			<form id="form_list" action="./del" method="post">
-				@Html.AntiForgeryToken()
 				<input type="hidden" name="__callback" value="del_callback"/>
 				<table id="GridView1" cellspacing="0" rules="all" border="1" style="border-collapse:collapse;" class="table table-bordered table-hover text-nowrap">
 					<tr>
@@ -68,8 +64,6 @@
 	</div>
 </div>
 
-@{
-}
 <script type="text/javascript">
 	(function () {
 		top.callTask = function(opt, id) {

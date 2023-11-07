@@ -1,6 +1,5 @@
 ﻿@{
 	Layout = "";
-	TaskInfo item = ViewBag.item;
 }
 
 <div class="box">
@@ -10,74 +9,39 @@
 	<div class="box-body">
 		<div class="table-responsive">
 			<form id="form_add" method="post">
-				@Html.AntiForgeryToken()
 				<input type="hidden" name="__callback" value="edit_callback" />
 				<div>
 					<table cellspacing="0" rules="all" class="table table-bordered table-hover" border="1" style="border-collapse:collapse;">
-						@if (item != null)
-						{
-							<tr>
-								<td>编号</td>
-								<td><input name="Id" type="text" class="datepicker" style="width:60%;" readonly /></td>
-							</tr>
-						}
 						<tr>
 							<td>标题</td>
-							<td><input name="Topic" type="text" class="datepicker" style="width:60%;" /></td>
+							<td><input name="Topic" type="text" class="datepicker" style="width:60%;" placeholder="用在 OnExecuting 区分任务" /></td>
 						</tr>
 					    <tr>
 							<td>数据</td>
-							<td><input name="Body" type="text" class="datepicker" style="width:60%;" /></td>
+							<td><textarea name="Body" style="width:60%;height:100px;" editor="ueditor" placeholder="用在 OnExecuting 区分相同 Title 任务的参数数据"></textarea></td>
 						</tr>
 					    <tr>
 							<td>轮次</td>
-							<td><input name="Round" type="text" class="form-control" data-inputmask="'mask': '9', 'repeat': 6, 'greedy': false" data-mask style="width:200px;" value="10" /></td>
+							<td><input name="Round" type="text" class="datepicker" style="width:60%;" placeholder="循环多少次，-1 是永久循环" /></td>
 						</tr>
 					    <tr>
 							<td>定时类型</td>
 							<td>
-                                <select name="Interval"><option value="">------ 请选择 ------</option>
+                                <select name="Interval" onchange="top.IntervalChange(this.value);"><option value="">------ 请选择 ------</option>
 									@foreach (object eo in Enum.GetValues(typeof(FreeScheduler.TaskInterval))) { <option value="@eo">@eo</option> }
 								</select>
                             </td>
 						</tr>
 					    <tr>
 							<td>定时参数(UTC)</td>
-							<td><input name="IntervalArgument" type="text" class="datepicker" style="width:60%;" /></td>
+							<td>
+								<input name="IntervalArgument" type="text" class="datepicker" style="width:60%;" />
+								<div id="IntervalArgument_tips"></div>
+							</td>
 						</tr>
-						@if (item != null)
-						{
-							<tr>
-								<td>创建时间</td>
-								<td><input name="CreateTime" type="text" class="datepicker" /></td>
-							</tr>
-							<tr>
-								<td>最后运行时间</td>
-								<td><input name="LastRunTime" type="text" class="datepicker" /></td>
-							</tr>
-							<tr>
-								<td>第几轮</td>
-								<td><input name="CurrentRound" type="text" class="form-control" data-inputmask="'mask': '9', 'repeat': 6, 'greedy': false" data-mask style="width:200px;" /></td>
-							</tr>
-							<tr>
-								<td>错次数</td>
-								<td><input name="ErrorTimes" type="text" class="form-control" data-inputmask="'mask': '9', 'repeat': 6, 'greedy': false" data-mask style="width:200px;" /></td>
-							</tr>
-							<tr>
-								<td>任务状态</td>
-								<td>
-									<select name="Status"><option value="">------ 请选择 ------</option>
-										@foreach (object eo in Enum.GetValues(typeof(FreeScheduler.TaskStatus)))
-										{
-											<option value="@eo">@eo</option>
-										}
-									</select>
-								</td>
-							</tr>
-						}
 						<tr>
 							<td width="8%">&nbsp</td>
-							<td><input type="submit" value="@(item == null ? "添加" : "更新")" />&nbsp;<input type="button" value="取消" /></td>
+							<td><input type="submit" class="btn btn-info" value="添加" />&nbsp;<input type="button" class="btn" value="取消" /></td>
 						</tr>
 					</table>
 				</div>
@@ -89,19 +53,67 @@
 
 <script type="text/javascript">
 	(function () {
+		var form = $('#form_add')[0];
+		top.IntervalChange = function(val) {
+			var tips = null;
+			if (val == 'SEC') {
+				form.IntervalArgument.value = '5'
+				tips = `
+//每5秒触发，执行N次
+var id = scheduler.AddTask("topic1", "body1", round: -1, 5)
+
+//每次 不同的间隔秒数触发，执行6次
+var id = scheduler.AddTask("topic1", "body1", new [] { 5, 5, 10, 10, 60, 60 })`
+			}
+			if (val == 'RunOnDay') {
+				form.IntervalArgument.value = '08:00:00'
+				tips = `
+//每天 08:00:00 触发，指定utc时间，执行N次
+var id = scheduler.AddTaskRunOnDay("topic1", "body1", round: -1, "08:00:00")`
+			}
+			if (val == 'RunOnWeek') {
+				form.IntervalArgument.value = '1:08:00:00'
+				tips = `
+//每周一 08:00:00 触发，指定utc时间，执行1次
+var id = scheduler.AddTaskRunOnWeek("topic1", "body1", round: 1, "1:08:00:00")
+
+//每周日 08:00:00 触发，指定utc时间，执行1次
+var id = scheduler.AddTaskRunOnWeek("topic1", "body1", round: 1, "0:08:00:00")`
+			}
+			if (val == 'RunOnMonth') {
+				form.IntervalArgument.value = '1:08:00:00'
+				tips = `
+//每月1日 08:00:00 触发，指定utc时间，执行12次
+var id = scheduler.AddTaskRunOnMonth("topic1", "body1", round: 12, "1:08:00:00")
+
+//每月最后一日 08:00:00 触发，指定utc时间，执行12次
+var id = scheduler.AddTaskRunOnMonth("topic1", "body1", round: 12, "-1:08:00:00")`
+			}
+			if (val == 'Custom') {
+				form.IntervalArgument.value = '0/1 * * * * ?'
+				tips = `
+//自定义间隔 cron
+var id = scheduler.AddTaskCustom("topic1", "body1", "0/1 * * * * ? ")
+
+new FreeSchedulerBuilder()
+    ...
+    .UseCustomInterval(task =>
+    {
+        //利用 cron 功能库解析 task.IntervalArgument 得到下一次执行时间
+        //与当前时间相减，得到 TimeSpan，若返回 null 则任务完成
+        return TimeSpan.FromSeconds(5);
+    })
+    .Build();`
+			}
+			if (tips) $('#IntervalArgument_tips').html(tips.replace(/ /g, '&nbsp;').replace(/\n/g, '<br>'))
+		}
 		top.edit_callback = function (rt) {
 			if (rt.code == 0) return top.mainViewNav.goto('./?' + new Date().getTime());
 			alert(rt.message);
 		};
 
-		var form = $('#form_add')[0];
+		
 		var item = null;
-		@if (item != null) {
-			<text>
-			item = @Html.Json(item);
-			fillForm(form, item);
-			</text>
-		}
 
 		top.mainViewInit();
 	})();

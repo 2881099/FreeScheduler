@@ -73,3 +73,7 @@ table#GridView1 td.page .statics{}
 table#GridView1 td.page a{padding:3px 5px 2px 5px;margin:0px 3px 0px 0px;background:#367fa9;border:1px solid #384EA3;color:#fff;text-decoration:none;float:left;} 
 table#GridView1 td.page a:visited {color:#fff;}
 table#GridView1 td.page a:hover{color:#BC2931;border:1px solid #384EA3;background:#fff;}
+
+.datepicker {
+	border: 1px solid #aaa;
+}

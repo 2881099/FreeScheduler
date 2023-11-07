@@ -49,14 +49,15 @@ namespace FreeSql.FreeScheduler.Controllers
         /***************************************** POST *****************************************/
 
         [HttpPost("add")]
-        [ValidateAntiForgeryToken]
         async public Task<ApiResult> _Add([FromForm] string Topic, [FromForm] string Body, [FromForm] int Round, [FromForm] TaskInterval Interval, [FromForm] string IntervalArgument)
         {
             string taskId = null;
             switch (Interval)
             {
                 case TaskInterval.SEC:
-                    taskId = scheduler.AddTask(Topic, Body, Round, int.Parse(IntervalArgument));
+                    var secs = IntervalArgument.Split(',').Select(a => int.Parse(a.Trim())).ToArray();
+                    if (secs.Length > 1) taskId = scheduler.AddTask(Topic, Body, secs);
+                    else taskId = scheduler.AddTask(Topic, Body, Round, secs[0]);
                     break;
                 case TaskInterval.RunOnDay:
                     taskId = scheduler.AddTaskRunOnDay(Topic, Body, Round, IntervalArgument);

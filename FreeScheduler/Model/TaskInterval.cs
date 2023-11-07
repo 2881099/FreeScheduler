@@ -33,7 +33,7 @@ namespace FreeScheduler
         RunOnMonth = 13,
 
         /// <summary>
-        /// 自定义触发，new Scheduler(.., new YourCustomHandler())
+        /// 自定义触发，要求设置 UseCustomInterval
         /// </summary>
         Custom = 21
     }
