@@ -69,14 +69,17 @@
 
 @{
 	var clusters = ViewBag.clusters as FreeRedis.ZMember[];
-	var clustersTasks = ViewBag.clustersTasks as int[];
+	var clusterTasks = ViewBag.clusterTasks as int[];
+	var clusterNames = ViewBag.clusterNames as string[];
 	var timestamp = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
 
 	string getClusterText(int index, FreeRedis.ZMember member) 
 	{
-		if (timestamp - member.score < 10) return $"{member.member}({clustersTasks[index]})";
-		if (timestamp - member.score < 30) return $"<font color=red>{member.member}({clustersTasks[index]})[可能离线]</font>";
-		return $"<font color=red>{member.member}({clustersTasks[index]})[离线]</font>";
+		var name = clusterNames[index];
+		if (string.IsNullOrWhiteSpace(name)) name = member.member;
+		if (timestamp - member.score < 10) return $"{name}({clusterTasks[index]})";
+		if (timestamp - member.score < 30) return $"<font color=red>{name}({clusterTasks[index]})[可能离线]</font>";
+		return $"<font color=red>{name}({clusterTasks[index]})[离线]</font>";
 	}
 }
 

@@ -22,7 +22,12 @@ Scheduler scheduler = new FreeSchedulerBuilder()
         Console.WriteLine($"[{DateTime.Now.ToString("HH:mm:ss.fff")}] {task.Topic} ±»Ö´ÐÐ");
     })
     .UseFreeSql(fsql)
-    .UseCluster(redis)
+    .UseCluster(redis, new ClusterOptions
+    {
+        Name = Environment.GetCommandLineArgs().FirstOrDefault(a => a.StartsWith("--name="))?.Substring(7),
+        HeartbeatInterval = 2,
+        OfflineSeconds = 5,
+    })
     .Build();
 if (fsql.Select<TaskInfo>().Any() == false)
 {

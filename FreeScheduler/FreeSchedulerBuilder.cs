@@ -12,6 +12,7 @@ public class FreeSchedulerBuilder
     IFreeSql _fsql;
     RedisClient _redis;
     RedisClient _clusterRedis;
+    ClusterOptions _clusterOptions;
     ITaskIntervalCustomHandler _customIntervalHandler;
     TimeSpan _scanInterval = TimeSpan.FromMilliseconds(200);
 
@@ -54,9 +55,10 @@ public class FreeSchedulerBuilder
     /// - 支持 进程互通，任意进程都可以执行（RemoveTask/ExistsTask/PauseTask/RunNowTask/RemoveTempTask/ExistsTempTask）<para></para>
     /// - 支持 进程意外离线后，卸载进程内的任务，重新安排上线<para></para>
     /// </summary>
-    public FreeSchedulerBuilder UseCluster(IRedisClient redis)
+    public FreeSchedulerBuilder UseCluster(IRedisClient redis, ClusterOptions options = null)
     {
         _clusterRedis = redis as RedisClient;
+        _clusterOptions = options;
         return this;
     }
     /// <summary>
@@ -88,7 +90,7 @@ public class FreeSchedulerBuilder
             if (_clusterRedis != null) throw new Exception($"UseCluster 集群功能仅支持 UseFreeSql/UseFreeRedis 持久化");
             taskHandler = new MemoryTaskHandler() { Executing = _executing };
         }
-        var scheduler = new Scheduler(taskHandler, _customIntervalHandler, _clusterRedis != null ? new ClusterContext(_clusterRedis) : null);
+        var scheduler = new Scheduler(taskHandler, _customIntervalHandler, _clusterRedis != null ? new ClusterContext(_clusterRedis, _clusterOptions) : null);
         scheduler.ScanInterval = _scanInterval;
         return scheduler;
     }

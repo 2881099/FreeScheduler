@@ -6,20 +6,45 @@ using System.Threading;
 
 namespace FreeScheduler
 {
+    public class ClusterOptions
+    {
+        /// <summary>
+        /// 可视化名称
+        /// </summary>
+        public string Name { get; set; }
+        /// <summary>
+        /// 心跳间隔，默认值：5秒
+        /// </summary>
+        public int HeartbeatInterval { get; set; } = 5;
+        /// <summary>
+        /// 离线：心跳停止后的秒数，默认值：30秒
+        /// </summary>
+        public int OfflineSeconds { get; set; } = 30;
+    }
+
     class ClusterContext
     {
-        public string Name { get; private set; } = Guid.NewGuid().ToString("n");
+        public string ClusterId { get; private set; }
+        public ClusterOptions Options { get; }
         Scheduler _scheduler { get; set; }
         RedisClient _redis { get; }
 
-        public ClusterContext(RedisClient redis)
+        public ClusterContext(RedisClient redis, ClusterOptions options)
         {
             _redis = redis;
+            ClusterId = Guid.NewGuid().ToString("n");
+            Options = new ClusterOptions();
+            if (options != null)
+            {
+                Options.Name = options.Name;
+                Options.HeartbeatInterval = options.HeartbeatInterval > 0 ? options.HeartbeatInterval : 5;
+                Options.OfflineSeconds = Math.Max(Options.HeartbeatInterval * 2, options.OfflineSeconds);
+            }
         }
         internal void Init(Scheduler scheduler)
         {
             _scheduler = scheduler;
-            RefershAndOffline();
+            HeartbeatOffline();
             _redis.SubscribeList("freescheduler_cluster_alloc", msg =>
             {
                 if (string.IsNullOrWhiteSpace(msg)) return;
@@ -43,9 +68,9 @@ namespace FreeScheduler
                         }
                 }
             });
-            _redis.Subscribe($"freescheduler_cluster_{Name}", SubscribeName);
+            _redis.Subscribe($"freescheduler_cluster_{ClusterId}", SubscribeClusterId);
         }
-        void SubscribeName(string chan, object data)
+        void SubscribeClusterId(string chan, object data)
         {
             var msg = data as string;
             if (string.IsNullOrWhiteSpace(msg)) return;
@@ -116,8 +141,8 @@ namespace FreeScheduler
         {
             if (_redis != null)
             {
-                var targetClusterName = _redis.Get($"freescheduler_cluster_{targetKey}_{id}");
-                if (!string.IsNullOrWhiteSpace(targetClusterName) && targetClusterName != Name)
+                var targetClusterId = _redis.Get($"freescheduler_cluster_{targetKey}_{id}");
+                if (!string.IsNullOrWhiteSpace(targetClusterId) && targetClusterId != ClusterId)
                 {
                     var waitId = Guid.NewGuid().ToString("n");
                     using (var wait = new ClusterResponseWait())
@@ -125,7 +150,7 @@ namespace FreeScheduler
                         if (_responseWait.TryAdd(waitId, wait))
                         {
                             var timestamp = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
-                            _redis.Publish($"freescheduler_cluster_{targetClusterName}", $"{timestamp}|{method}|{id}|{Name}|{waitId}");
+                            _redis.Publish($"freescheduler_cluster_{targetClusterId}", $"{timestamp}|{method}|{id}|{ClusterId}|{waitId}");
                             if (!wait.Wait.WaitOne(TimeSpan.FromSeconds(10)))
                             {
                                 _responseWait.TryRemove(waitId, out var _);
@@ -141,50 +166,56 @@ namespace FreeScheduler
             return false;
         }
 
-        void RefershAndOffline()
+        void HeartbeatOffline()
         {
             var timestamp = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
             object timeoutResult = null;
             try
             {
-                timeoutResult = _redis.Eval(@"if(redis.call('hexists','freescheduler_cluster_offline',ARGV[2])==1) then return '-1' end
-redis.call('zadd','freescheduler_cluster',ARGV[1],ARGV[2])
-local a=redis.call('zrangebyscore','freescheduler_cluster',0,ARGV[1]-30,'limit',0,1)
-if(a and a[1]) then return {a[1],redis.call('hsetnx','freescheduler_cluster_offline',a[1],ARGV[1])} end
-return nil", null, timestamp, Name);
+                timeoutResult = _redis.Eval($@"if(redis.call('hexists','freescheduler_cluster_offline',ARGV[2])==1) then return '-1' end
+redis.call('zadd','freescheduler_cluster',ARGV[1],ARGV[2]){(string.IsNullOrWhiteSpace(Options.Name) ? "" : $" redis.call('hset','freescheduler_cluster_name',ARGV[2],ARGV[3])")}
+local a=redis.call('zrangebyscore','freescheduler_cluster',0,ARGV[1]-{Options.OfflineSeconds},'limit',0,1)
+if(a and a[1]) then return {{a[1],redis.call('hsetnx','freescheduler_cluster_offline',a[1],ARGV[1])}} end
+return nil", null, timestamp, ClusterId, Options.Name);
             }
             finally
             {
-                _scheduler.AddTempTask(TimeSpan.FromSeconds(5), RefershAndOffline, false);
+                _scheduler.AddTempTask(TimeSpan.FromSeconds(Options.HeartbeatInterval), HeartbeatOffline, false);
             }
             if (timeoutResult == null) return;
             if (timeoutResult as string == "-1") //被其他进程判定离线
             {
                 _scheduler.CancelAllTask();
-                if (timestamp - _redis.HGet<int>("freescheduler_cluster_offline", Name) > 60 * 5)
+                if (timestamp - _redis.HGet<int>("freescheduler_cluster_offline", ClusterId) > 60 * 5)
                 {
-                    _redis.UnSubscribe($"freescheduler_cluster_{Name}");
-                    Name = Guid.NewGuid().ToString("n") + "_renew"; //离线超过5分钟，取消本进程任务，重新生成 Name
-                    _redis.Subscribe($"freescheduler_cluster_{Name}", SubscribeName);
+                    _redis.UnSubscribe($"freescheduler_cluster_{ClusterId}");
+                    ClusterId = Guid.NewGuid().ToString("n") + "_renew"; //离线超过5分钟，取消本进程任务，重新生成 ClusterId
+                    _redis.Subscribe($"freescheduler_cluster_{ClusterId}", SubscribeClusterId);
                 }
                 return;
             }
             var trobjs = timeoutResult as object[];
             if (trobjs.Length != 2 || trobjs[1]?.ToString() != "1") return; //只有一个进程获得 ReloadTask 权
-            var timeoutName = trobjs[0]?.ToString();
-            if (string.IsNullOrWhiteSpace(timeoutName)) return;
-            _redis.ZRem("freescheduler_cluster", timeoutName);
-            ReloadTask(timeoutName);
+            var timeoutClusterId = trobjs[0]?.ToString();
+            if (string.IsNullOrWhiteSpace(timeoutClusterId)) return;
+            using (var pipe = _redis.StartPipe())
+            {
+                pipe.ZRem("freescheduler_cluster", timeoutClusterId);
+                pipe.HDel("freescheduler_cluster_name", timeoutClusterId);
+                pipe.EndPipe();
+            }
+            ReloadTask(timeoutClusterId);
         }
-        void ReloadTask(string name)
+        void ReloadTask(string clusterId)
         {
-            var regkey = $"freescheduler_cluster_register_{name}";
+            var regkey = $"freescheduler_cluster_register_{clusterId}";
             try
             {
                 foreach (var scan in _redis.ZScan(regkey, "*", 100))
                 {
                     if (scan.Any() == false) continue;
-                    _redis.Eval($"for a=1,#ARGV do redis.call('zrem','freescheduler_cluster_register_'..KEYS[1],ARGV[a]) if(redis.call('get','freescheduler_cluster_'..ARGV[a])==KEYS[1])then redis.call('del',KEYS[1]) end end return nil", new[] { name } , scan.Select(a => a.member).ToArray());
+                    _redis.Eval($"for a=1,#ARGV do redis.call('zrem','freescheduler_cluster_register_'..KEYS[1],ARGV[a]) if(redis.call('get','freescheduler_cluster_'..ARGV[a])==KEYS[1])then redis.call('del',KEYS[1]) end end return nil", 
+                        new[] { clusterId } , scan.Select(a => a.member).ToArray());
                     var timestamp = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
                     var taskIds = scan.Where(sr => sr.member.StartsWith("AddTask_")).Select(sr => sr.member.Substring(8)) //忽略内存任务 AddTempTask_
                         .Where(taskId => _scheduler._tasks.ContainsKey(taskId) == false)
@@ -193,26 +224,26 @@ return nil", null, timestamp, Name);
                     break; //数量较多时，延迟处理
                 }
                 if (_redis.ZCard(regkey) > 0)
-                    _scheduler.AddTempTask(TimeSpan.FromMilliseconds(1_000), () => ReloadTask(name), false);
+                    _scheduler.AddTempTask(TimeSpan.FromMilliseconds(1_000), () => ReloadTask(clusterId), false);
             }
             catch
             {
-                _scheduler.AddTempTask(TimeSpan.FromMilliseconds(30_000), () => ReloadTask(name), false);
+                _scheduler.AddTempTask(TimeSpan.FromMilliseconds(30_000), () => ReloadTask(clusterId), false);
             }
         }
 
         public bool IsOffline()
         {
-            var offline = _redis.HExists("freescheduler_cluster_offline", Name);
+            var offline = _redis.HExists("freescheduler_cluster_offline", ClusterId);
             return offline;
         }
         public bool Register(string id, string targetKey)
         {
             var timestamp = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
-            var keys = new[] { $"freescheduler_cluster_{targetKey}_{id}", $"freescheduler_cluster_register_{Name}" };
+            var keys = new[] { $"freescheduler_cluster_{targetKey}_{id}", $"freescheduler_cluster_register_{ClusterId}" };
             var result = _redis.Eval(@"if(redis.call('setnx',KEYS[1],ARGV[1])==1)then redis.call('zadd',KEYS[2],ARGV[2],ARGV[3]) return 1 end
 if(redis.call('hexists','freescheduler_cluster_offline',redis.call('get',KEYS[1]))==1)then redis.call('set',KEYS[1],ARGV[1]) redis.call('zadd',KEYS[2],ARGV[2],ARGV[3]) return 1 end return 0", 
-                keys, Name, timestamp, $"{targetKey}_{id}")?.ToString();
+                keys, ClusterId, timestamp, $"{targetKey}_{id}")?.ToString();
 
             return result == "1";
         }
@@ -220,7 +251,7 @@ if(redis.call('hexists','freescheduler_cluster_offline',redis.call('get',KEYS[1]
         {
             var keys = new[] { $"freescheduler_cluster_{targetKey}_{id}" };
             _redis.Eval(@"local a=redis.call('get',KEYS[1]) if(a and a==ARGV[1])then
-redis.call('del',KEYS[1],'freescheduler_cluster_register_'..a) end return 1", keys, Name);
+redis.call('del',KEYS[1],'freescheduler_cluster_register_'..a) end return 1", keys, ClusterId);
         }
     }
 }

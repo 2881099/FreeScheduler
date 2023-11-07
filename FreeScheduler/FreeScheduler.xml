@@ -4,6 +4,21 @@
         <name>FreeScheduler</name>
     </assembly>
     <members>
+        <member name="P:FreeScheduler.ClusterOptions.Name">
+            <summary>
+            可视化名称
+            </summary>
+        </member>
+        <member name="P:FreeScheduler.ClusterOptions.HeartbeatInterval">
+            <summary>
+            心跳间隔，默认值：5秒
+            </summary>
+        </member>
+        <member name="P:FreeScheduler.ClusterOptions.OfflineSeconds">
+            <summary>
+            离线：心跳停止后的秒数，默认值：30秒
+            </summary>
+        </member>
         <member name="M:FreeScheduler.Snowfake.#ctor(System.Int64)">
             <summary>
             机器码
@@ -374,7 +389,7 @@
             UseFreeSql/UseFreeRedis 二选一
             </summary>
         </member>
-        <member name="M:FreeSchedulerBuilder.UseCluster(FreeRedis.IRedisClient)">
+        <member name="M:FreeSchedulerBuilder.UseCluster(FreeRedis.IRedisClient,FreeScheduler.ClusterOptions)">
             <summary>
             开启集群（依赖 Redis）<para></para>
             特点：<para></para>

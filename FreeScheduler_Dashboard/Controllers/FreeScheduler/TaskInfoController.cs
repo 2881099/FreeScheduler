@@ -41,21 +41,27 @@ namespace FreeSql.FreeScheduler.Controllers
         async public Task<ActionResult> List([FromQuery] string key, [FromQuery] string pid, [FromQuery] TaskStatus? status, [FromQuery] int limit = 20, [FromQuery] int page = 1)
         {
             var clusters = await redis.ZRangeByScoreWithScoresAsync("freescheduler_cluster", "-inf", "+inf");
-            var clustersTasks = new int[clusters.Length];
+            var clusterTasks = new int[clusters.Length];
+            var clusterNames = new string[clusters.Length];
             if (clusters.Any()) {
                 using (var pipe = redis.StartPipe())
                 {
-                    foreach (var cluster in clusters)
-                        pipe.ZCard($"freescheduler_cluster_register_{cluster.member}");
+                    foreach (var cluster in clusters) pipe.ZCard($"freescheduler_cluster_register_{cluster.member}");
+                    foreach (var cluster in clusters) pipe.HGet($"freescheduler_cluster_name", cluster.member);
                     var ret = pipe.EndPipe();
-                    for (var a = 0; a < ret.Length; a++)
-                        clustersTasks[a] = int.TryParse(ret[a]?.ToString() ?? "0", out var tryint) ? tryint : 0;
+                    for (var a = 0; a < clusters.Length; a++)
+                        clusterTasks[a] = int.TryParse(ret[a]?.ToString() ?? "0", out var tryint) ? tryint : 0;
+                    for (var a = 0; a < clusters.Length; a++)
+                    {
+                        clusterNames[a] = ret[clusters.Length + a]?.ToString();
+                        if (string.IsNullOrWhiteSpace(clusterNames[a])) clusterNames[a] = clusters[a].member;
+                    }
                 }
-                var clustersOrder = clusters.Select((a, index) => new { cluster = a, count = clustersTasks[index] })
+                var clustersOrder = clusters.Select((a, index) => new { cluster = a, count = clusterTasks[index] })
                     .OrderByDescending(a => a.cluster.member == scheduler.ClusterId ? int.MaxValue : a.count)
                     .ThenBy(a => a.cluster.member).ToArray();
                 clusters = clustersOrder.Select(a => a.cluster).ToArray();
-                clustersTasks = clustersOrder.Select(a => a.count).ToArray();
+                clusterTasks = clustersOrder.Select(a => a.count).ToArray();
 
             }
             if (clusters.Any(a => a.member == pid))
@@ -71,7 +77,7 @@ namespace FreeSql.FreeScheduler.Controllers
                 }
                 else
                     ViewBag.items = new List<TaskInfo>();
-                ViewBag.count = clusters.Where((a, index) => a.member == pid).Select((a, index) => clustersTasks[index]).FirstOrDefault();
+                ViewBag.count = clusters.Where((a, index) => a.member == pid).Select((a, index) => clusterTasks[index]).FirstOrDefault();
             }
             else
             {
@@ -83,7 +89,8 @@ namespace FreeSql.FreeScheduler.Controllers
                 ViewBag.count = count;
             }
             ViewBag.clusters = clusters;
-            ViewBag.clustersTasks = clustersTasks;
+            ViewBag.clusterTasks = clusterTasks;
+            ViewBag.clusterNames = clusterNames;
             return View();
         }
 

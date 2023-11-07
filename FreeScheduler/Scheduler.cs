@@ -31,10 +31,11 @@ namespace FreeScheduler
         internal ITaskIntervalCustomHandler _taskIntervalCustomHandler;
         internal ConcurrentDictionary<string, TaskInfo> _tasks = new ConcurrentDictionary<string, TaskInfo>();
 		internal ClusterContext _clusterContext;
-		public string ClusterId => _clusterContext.Name;
+		public string ClusterId => _clusterContext.ClusterId;
+		public ClusterOptions ClusterOptions => _clusterContext.Options;
 
-		#region Dispose
-		~Scheduler() => Dispose();
+        #region Dispose
+        ~Scheduler() => Dispose();
 		bool isdisposed = false;
 		object isdisposedLock = new object();
 		public void Dispose()
@@ -362,7 +363,7 @@ namespace FreeScheduler
 				Interlocked.Decrement(ref _quantityTask);
 				_taskHandler.OnRemove(old);
 				_clusterContext?.Remove(id, nameof(AddTask));
-				return _ib.TryRemove(id);
+				return _ib.TryRemove(id, true);
 			}
 			if (_clusterContext?.RemoteCall(id, nameof(AddTask), nameof(RemoveTask), out var result) == true) return result;
 			var task = _taskHandler.Load(id);
@@ -372,7 +373,7 @@ namespace FreeScheduler
 				_clusterContext?.Remove(id, nameof(AddTask));
 				return true;
 			}
-			return _ib.TryRemove(id);
+			return _ib.TryRemove(id, true);
 		}
 		internal void CancelAllTask()
 		{
@@ -381,12 +382,12 @@ namespace FreeScheduler
 				if (_tasks.TryRemove(id, out var old))
 				{
 					Interlocked.Decrement(ref _quantityTask);
-					_ib.TryRemove(id);
+					_ib.TryRemove(id, true);
 				}
 			}
 			foreach (var id in _ib.GetKeys())
 			{
-				if (id.StartsWith("system_") == false && _ib.TryRemove(id))
+				if (id.StartsWith("system_") == false && _ib.TryRemove(id, true))
                     Interlocked.Decrement(ref _quantityTempTask);
 			}
 		}
@@ -456,7 +457,7 @@ namespace FreeScheduler
                         Success = true,
                     });
 				}
-				return _ib.TryRemove(id);
+				return _ib.TryRemove(id, true);
 			}
 			if (_clusterContext?.RemoteCall(id, nameof(AddTask), nameof(PauseTask), out var result) == true) return result;
 			return false;
