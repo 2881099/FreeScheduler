@@ -95,6 +95,7 @@ function cms2Filter(schema, query_all) {
 	//];
 	for (var a = 0; a < schema.length; a++) {
 		if (!schema[a].value) schema[a].value = schema[a].text;
+		if (schema[a].value.length == 0) continue;
 		var sb = '<div style="line-height:36px;border-bottom:1px solid #ddd;word-wrap:break-word;word-break:break-all;{2}">\
 			<div style="float:left;width:70px;">{1}</div>\
 			<div style="margin-left:70px;"><a name="a_{0}_all" field="{0}" href="#" style="padding:3px 6px 3px 6px;background-color:#eee;">全部</a>&nbsp;'.format(schema[a].field, schema[a].name, schema[a].style);

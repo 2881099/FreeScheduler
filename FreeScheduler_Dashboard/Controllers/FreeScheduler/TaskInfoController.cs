@@ -40,7 +40,7 @@ namespace FreeSql.FreeScheduler.Controllers
         [HttpGet]
         async public Task<ActionResult> List([FromQuery] string key, [FromQuery] string pid, [FromQuery] TaskStatus? status, [FromQuery] int limit = 20, [FromQuery] int page = 1)
         {
-            var clusters = await redis.ZRangeByScoreWithScoresAsync("freescheduler_cluster", "-inf", "+inf");
+            var clusters = scheduler.ClusterId == null ? new ZMember[0] : await redis.ZRangeByScoreWithScoresAsync("freescheduler_cluster", "-inf", "+inf");
             var clusterTasks = new int[clusters.Length];
             var clusterNames = new string[clusters.Length];
             if (clusters.Any()) {
@@ -57,11 +57,12 @@ namespace FreeSql.FreeScheduler.Controllers
                         if (string.IsNullOrWhiteSpace(clusterNames[a])) clusterNames[a] = clusters[a].member;
                     }
                 }
-                var clustersOrder = clusters.Select((a, index) => new { cluster = a, count = clusterTasks[index] })
+                var clustersOrder = clusters.Select((a, index) => new { cluster = a, count = clusterTasks[index], name = clusterNames[index] })
                     .OrderByDescending(a => a.cluster.member == scheduler.ClusterId ? int.MaxValue : a.count)
                     .ThenBy(a => a.cluster.member).ToArray();
                 clusters = clustersOrder.Select(a => a.cluster).ToArray();
                 clusterTasks = clustersOrder.Select(a => a.count).ToArray();
+                clusterNames = clustersOrder.Select(a => a.name).ToArray();
 
             }
             if (clusters.Any(a => a.member == pid))

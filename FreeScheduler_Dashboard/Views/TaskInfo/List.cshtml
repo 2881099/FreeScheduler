@@ -110,7 +110,7 @@
 		var fqs = _clone(top.mainViewNav.query);
 		delete fqs.page;
 		var fsc = [
-			{ name: '进程', field: 'pid', single: 1, text: @Html.Json(clusters.Select((a, index) => getClusterText(index, a))), value: @Html.Json(clusters.Select(a => a.member)) },
+			{ name: '集群', field: 'pid', single: 1, text: @Html.Json(clusters.Select((a, index) => getClusterText(index, a))), value: @Html.Json(clusters.Select(a => a.member)) },
 			{ name: '状态', field: 'status', single: 1, text: ['运行中','暂停中','已完成'], value: [0,1,2] },
 			null
 		];

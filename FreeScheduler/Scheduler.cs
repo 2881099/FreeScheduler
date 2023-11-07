@@ -31,8 +31,8 @@ namespace FreeScheduler
         internal ITaskIntervalCustomHandler _taskIntervalCustomHandler;
         internal ConcurrentDictionary<string, TaskInfo> _tasks = new ConcurrentDictionary<string, TaskInfo>();
 		internal ClusterContext _clusterContext;
-		public string ClusterId => _clusterContext.ClusterId;
-		public ClusterOptions ClusterOptions => _clusterContext.Options;
+		public string ClusterId => _clusterContext?.ClusterId;
+		public ClusterOptions ClusterOptions => _clusterContext?.Options;
 
         #region Dispose
         ~Scheduler() => Dispose();
