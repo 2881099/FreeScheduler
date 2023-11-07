@@ -13,10 +13,11 @@ namespace FreeScheduler
 		IdleBus _ib;
 		int _quantityTempTask;
 		int _quantityTask;
-		/// <summary>
-		/// 临时任务数量
-		/// </summary>
-		public int QuantityTempTask => _quantityTempTask;
+		internal int _quantityTaskRunning;
+        /// <summary>
+        /// 临时任务数量
+        /// </summary>
+        public int QuantityTempTask => _quantityTempTask;
 		/// <summary>
 		/// 循环任务数量
 		/// </summary>
@@ -260,43 +261,52 @@ namespace FreeScheduler
                     return;
 				}
                 _wq.Enqueue(() =>
-				{
-					var result = new TaskLog
+                {
+                    Interlocked.Increment(ref _quantityTaskRunning);
+                    try
 					{
-						CreateTime = DateTime.UtcNow,
-						TaskId = task.Id,
-						Round = currentRound,
-						Remark = remark,
-						Success = true
-					};
-					var startdt = DateTime.UtcNow;
-					var status = task.Status;
-					try
-					{
-						_taskHandler.OnExecuting(this, task);
-					}
-					catch (Exception ex)
-					{
-						task.IncrementErrorTimes();
-						result.Exception = ex.InnerException == null ? $"{ex.Message}\r\n{ex.StackTrace}" : $"{ex.Message}\r\n{ex.StackTrace}\r\n\r\nInnerException: {ex.InnerException.Message}\r\n{ex.InnerException.StackTrace}";
-						result.Success = false;
-					}
-					finally
-					{
-						if (status != task.Status) result.Remark = $"{result.Remark}{(string.IsNullOrEmpty(result.Remark) ? "" : ", ")}[Executing] 任务状态 `{status}` 已转为 `{task.Status}`";
-						result.ElapsedMilliseconds = (long)DateTime.UtcNow.Subtract(startdt).TotalMilliseconds;
-						task.LastRunTime = DateTime.UtcNow;
-						if (round != -1 && currentRound >= round) task.Status = TaskStatus.Completed;
-						_taskHandler.OnExecuted(this, task, result);
-					}
-					if (task.Status != TaskStatus.Running) return;
-					if (round == -1 || currentRound < round)
-					{
-						var nextTimeSpan = LocalGetNextTimeSpan(task.Status, currentRound);
-						if (nextTimeSpan != null && _ib.TryRegister(task.Id, () => bus, nextTimeSpan.Value))
-							_ib.Get(task.Id);
-					}
-				});
+						var result = new TaskLog
+						{
+							CreateTime = DateTime.UtcNow,
+							TaskId = task.Id,
+							Round = currentRound,
+							Remark = remark,
+							Success = true
+						};
+						var startdt = DateTime.UtcNow;
+						var status = task.Status;
+						try
+						{
+							_taskHandler.OnExecuting(this, task);
+						}
+						catch (Exception ex)
+						{
+							task.IncrementErrorTimes();
+							result.Exception = ex.InnerException == null ? $"{ex.Message}\r\n{ex.StackTrace}" : $"{ex.Message}\r\n{ex.StackTrace}\r\n\r\nInnerException: {ex.InnerException.Message}\r\n{ex.InnerException.StackTrace}";
+							result.Success = false;
+						}
+						finally
+						{
+							if (status != task.Status) result.Remark = $"{result.Remark}{(string.IsNullOrEmpty(result.Remark) ? "" : ", ")}[Executing] 任务状态 `{status}` 已转为 `{task.Status}`";
+							result.ElapsedMilliseconds = (long)DateTime.UtcNow.Subtract(startdt).TotalMilliseconds;
+							task.LastRunTime = DateTime.UtcNow;
+							if (round != -1 && currentRound >= round) task.Status = TaskStatus.Completed;
+							_taskHandler.OnExecuted(this, task, result);
+						}
+						if (task.Status != TaskStatus.Running) return;
+						if (_tasks.ContainsKey(task.Id) == false) return;
+						if (round == -1 || currentRound < round)
+						{
+							var nextTimeSpan = LocalGetNextTimeSpan(task.Status, currentRound);
+							if (nextTimeSpan != null && _ib.TryRegister(task.Id, () => bus, nextTimeSpan.Value))
+								_ib.Get(task.Id);
+                        }
+                    }
+                    finally
+                    {
+                        Interlocked.Decrement(ref _quantityTaskRunning);
+                    }
+                });
 			});
 			if (_tasks.TryAdd(task.Id, task))
 			{

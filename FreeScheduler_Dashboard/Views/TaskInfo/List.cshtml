@@ -1,5 +1,7 @@
 ﻿@{
-    Layout = "";
+	Layout = "";
+
+	var dto = ViewBag.dto as Datafeed.ResultGetPage;
 }
 
 <div class="box">
@@ -28,7 +30,7 @@
 						<th scope="col">错次数</th>
 					</tr>
 					<tbody>
-						@foreach(TaskInfo item in ViewBag.items) {
+						@foreach(var item in dto.Tasks) {
 							<tr>
 								<td>
 									<input type="button" class="btn btn-xs btn-danger" value="删除" onclick="if (confirm('确认删除吗？')) top.callTask('delete', '@item.Id')" />
@@ -68,18 +70,15 @@
 </div>
 
 @{
-	var clusters = ViewBag.clusters as FreeRedis.ZMember[];
-	var clusterTasks = ViewBag.clusterTasks as int[];
-	var clusterNames = ViewBag.clusterNames as string[];
 	var timestamp = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
 
-	string getClusterText(int index, FreeRedis.ZMember member) 
+	string getClusterText(int index, Datafeed.ResultGetPage.ClusterInfo cluster) 
 	{
-		var name = clusterNames[index];
-		if (string.IsNullOrWhiteSpace(name)) name = member.member;
-		if (timestamp - member.score < 10) return $"{name}({clusterTasks[index]})";
-		if (timestamp - member.score < 30) return $"<font color=red>{name}({clusterTasks[index]})[可能离线]</font>";
-		return $"<font color=red>{name}({clusterTasks[index]})[离线]</font>";
+		var name = cluster.Name;
+		if (string.IsNullOrWhiteSpace(name)) name = cluster.Id;
+		if (timestamp - cluster.Heartbeat < 10) return $"{name}({cluster.TaskCount})";
+		if (timestamp - cluster.Heartbeat < 30) return $"<font color=red>{name}({cluster.TaskCount})[可能离线]</font>";
+		return $"<font color=red>{name}({cluster.TaskCount})[离线]</font>";
 	}
 }
 
@@ -106,11 +105,11 @@
 		var qs = _clone(top.mainViewNav.query);
 		var page = cint(qs.page, 1);
 		delete qs.page;
-		$('#kkpager').html(cms2Pager(@ViewBag.count, page, 20, qs, 'page'));
+		$('#kkpager').html(cms2Pager(@dto.Total, page, 20, qs, 'page'));
 		var fqs = _clone(top.mainViewNav.query);
 		delete fqs.page;
 		var fsc = [
-			{ name: '集群', field: 'pid', single: 1, text: @Html.Json(clusters.Select((a, index) => getClusterText(index, a))), value: @Html.Json(clusters.Select(a => a.member)) },
+			{ name: '集群', field: 'clusterId', single: 1, text: @Html.Json(dto.Clusters.Select((a, index) => getClusterText(index, a))), value: @Html.Json(dto.Clusters.Select(a => a.Id)) },
 			{ name: '状态', field: 'status', single: 1, text: ['运行中','暂停中','已完成'], value: [0,1,2] },
 			null
 		];

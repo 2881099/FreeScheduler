@@ -26,8 +26,8 @@ namespace FreeScheduler
     {
         public string ClusterId { get; private set; }
         public ClusterOptions Options { get; }
-        Scheduler _scheduler { get; set; }
-        RedisClient _redis { get; }
+        internal Scheduler _scheduler { get; set; }
+        internal RedisClient _redis { get; }
 
         public ClusterContext(RedisClient redis, ClusterOptions options)
         {
@@ -48,6 +48,12 @@ namespace FreeScheduler
             _redis.SubscribeList("freescheduler_cluster_alloc", msg =>
             {
                 if (string.IsNullOrWhiteSpace(msg)) return;
+                if (IsOffline() == true)
+                {
+                    _redis.RPush("freescheduler_cluster_alloc", msg);
+                    Thread.CurrentThread.Join(1000);
+                    return;
+                }
                 var args = msg.Split('|');
                 var timestamp = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
                 int.TryParse(args[0], out var time);
@@ -172,11 +178,12 @@ namespace FreeScheduler
             object timeoutResult = null;
             try
             {
-                timeoutResult = _redis.Eval($@"if(redis.call('hexists','freescheduler_cluster_offline',ARGV[2])==1) then return '-1' end
-redis.call('zadd','freescheduler_cluster',ARGV[1],ARGV[2]){(string.IsNullOrWhiteSpace(Options.Name) ? "" : $" redis.call('hset','freescheduler_cluster_name',ARGV[2],ARGV[3])")}
-local a=redis.call('zrangebyscore','freescheduler_cluster',0,ARGV[1]-{Options.OfflineSeconds},'limit',0,1)
-if(a and a[1]) then return {{a[1],redis.call('hsetnx','freescheduler_cluster_offline',a[1],ARGV[1])}} end
-return nil", null, timestamp, ClusterId, Options.Name);
+                timeoutResult = _redis.Eval($@"if(redis.call('hexists',KEYS[1],ARGV[2])==1)then return '-1' end
+redis.call('zadd',KEYS[2],ARGV[1],ARGV[2]){(string.IsNullOrWhiteSpace(Options.Name) ? "" : $" redis.call('hset','freescheduler_cluster_name',ARGV[2],ARGV[3])")}
+local a=redis.call('zrangebyscore',KEYS[2],0,ARGV[1]-{Options.OfflineSeconds},'limit',0,1)
+if(a and a[1])then if(redis.call('hsetnx',KEYS[1],a[1],ARGV[1])==1)then return {{a[1],1}} end
+if(ARGV[1]-tonumber(redis.call('hget',KEYS[1],a[1]))>120)then redis.call('zrem',KEYS[2],a[1]) end end
+return nil", new[] { "freescheduler_cluster_offline", "freescheduler_cluster" }, timestamp, ClusterId, Options.Name);
             }
             finally
             {
@@ -186,7 +193,8 @@ return nil", null, timestamp, ClusterId, Options.Name);
             if (timeoutResult as string == "-1") //被其他进程判定离线
             {
                 _scheduler.CancelAllTask();
-                if (timestamp - _redis.HGet<int>("freescheduler_cluster_offline", ClusterId) > 60 * 5)
+                var offlinets = timestamp - _redis.HGet<int>("freescheduler_cluster_offline", ClusterId);
+                if (offlinets > 60 * 5 || offlinets > 5 && _scheduler._quantityTaskRunning <= 0)
                 {
                     _redis.UnSubscribe($"freescheduler_cluster_{ClusterId}");
                     ClusterId = Guid.NewGuid().ToString("n") + "_renew"; //离线超过5分钟，取消本进程任务，重新生成 ClusterId

@@ -6,7 +6,7 @@ namespace FreeScheduler.TaskHandlers
 {
     public class FreeSqlHandler : ITaskHandler
     {
-        IFreeSql _fsql;
+        internal IFreeSql _fsql;
         public FreeSqlHandler(IFreeSql fsql)
         {
             _fsql = fsql;
