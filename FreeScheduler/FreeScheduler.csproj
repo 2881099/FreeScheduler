@@ -1,8 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFrameworks>netstandard2.0;net40</TargetFrameworks>
-		<Version>2.0.4</Version>
+		<TargetFrameworks>net70;net60;net50;netcoreapp31;netstandard2.0;net40</TargetFrameworks>
+		<Version>2.0.5</Version>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<Authors>YeXiangQin</Authors>
 		<Description>轻量化定时任务调度，支持集群任务、临时的延时任务和重复循环任务，可按秒，每天/每周/每月固定时间，自定义间隔执行，支持 .NET Core 2.1+、.NET Framework 4.0+ 运行环境。</Description>
@@ -29,6 +29,33 @@
 		<PackageReference Include="FreeSql" Version="3.2.666" />
 		<PackageReference Include="IdleBus" Version="1.5.3" />
 		<PackageReference Include="WorkQueue" Version="1.3.0" />
+	</ItemGroup>
+
+	<PropertyGroup Condition="'$(TargetFramework)' == 'net70' or '$(TargetFramework)' == 'net60' or '$(TargetFramework)' == 'net50' or '$(TargetFramework)' == 'netcoreapp31'">
+		<DefineConstants>Dashboard</DefineConstants>
+	</PropertyGroup>
+
+	<ItemGroup Condition="'$(TargetFramework)' == 'net70' or '$(TargetFramework)' == 'net60' or '$(TargetFramework)' == 'net50' or '$(TargetFramework)' == 'netcoreapp31'">
+		<EmbeddedResource Include="Dashboard\wwwroot.zip" />
+		<PackageReference Include="Microsoft.AspNetCore.StaticFiles" Version="2.2.0" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+	</ItemGroup>
+	<ItemGroup Condition="'$(TargetFramework)' == 'net70'">
+		<PackageReference Include="Microsoft.Extensions.FileProviders.Physical" Version="7.0.0" />
+	</ItemGroup>
+	<ItemGroup Condition="'$(TargetFramework)' == 'net60'">
+		<PackageReference Include="Microsoft.Extensions.FileProviders.Physical" Version="6.0.0" />
+	</ItemGroup>
+	<ItemGroup Condition="'$(TargetFramework)' == 'net50'">
+		<PackageReference Include="Microsoft.Extensions.FileProviders.Physical" Version="5.0.0" />
+	</ItemGroup>
+	<ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp31'">
+		<PackageReference Include="Microsoft.Extensions.FileProviders.Physical" Version="3.1.0" />
+	</ItemGroup>
+
+
+	<ItemGroup>
+		<None Remove="Dashboard\wwwroot.zip" />
 	</ItemGroup>
 
 </Project>

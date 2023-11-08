@@ -11,6 +11,7 @@ namespace FreeScheduler
 	{
         public class ResultGetPage
         {
+            public int Timestamp { get; set; }
             public string Description { get; set; }
             public int Total { get; set; }
             public List<TaskInfo> Tasks { get; set; }
@@ -27,6 +28,7 @@ namespace FreeScheduler
         public static ResultGetPage GetPage(Scheduler scheduler, string clusterId, TaskStatus? status, int limit = 20, int page = 1)
 		{
             var result = new ResultGetPage();
+            result.Timestamp = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
             result.Description = $"集群: {(scheduler.ClusterId == null ? "否" : $"是, 名称: {(string.IsNullOrWhiteSpace(scheduler.ClusterOptions.Name) ? scheduler.ClusterId : scheduler.ClusterOptions.Name)}")}";
             if (scheduler._taskHandler is FreeSqlHandler) result.Description += $", 存储: FreeSql, 保留: {TimeSpan.FromSeconds(scheduler._reserveSeconds).TotalHours}小时";
             else if (scheduler._taskHandler is FreeRedisHandler) result.Description += $", 存储: Redis, 保留: {TimeSpan.FromSeconds(scheduler._reserveSeconds).TotalHours}小时";
