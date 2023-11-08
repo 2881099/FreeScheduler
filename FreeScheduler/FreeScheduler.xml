@@ -377,16 +377,14 @@
             </summary>
             <returns></returns>
         </member>
-        <member name="M:FreeSchedulerBuilder.UseFreeSql(IFreeSql)">
+        <member name="M:FreeSchedulerBuilder.UseStorage(IFreeSql,System.Nullable{System.TimeSpan})">
             <summary>
-            基于 数据库，使用 FreeSql ORM 持久化<para></para>
-            UseFreeSql/UseFreeRedis 二选一
+            基于 数据库，使用 FreeSql ORM 持久化，默认保存7天
             </summary>
         </member>
-        <member name="M:FreeSchedulerBuilder.UseFreeRedis(FreeRedis.IRedisClient)">
+        <member name="M:FreeSchedulerBuilder.UseStorage(FreeRedis.IRedisClient,System.Nullable{System.TimeSpan})">
             <summary>
-            基于 Redis，使用 FreeRedis 持久化<para></para>
-            UseFreeSql/UseFreeRedis 二选一
+            基于 Redis，使用 FreeRedis 持久化，默认保存7天
             </summary>
         </member>
         <member name="M:FreeSchedulerBuilder.UseCluster(FreeRedis.IRedisClient,FreeScheduler.ClusterOptions)">
@@ -404,7 +402,7 @@
             <summary>
             自定义间隔（可实现 cron）
             </summary>
-            <param name="nextDelay"></param>
+            <param name="nextDelay">获取下一次定时间隔，返回 null 时结束</param>
             <returns></returns>
         </member>
         <member name="M:FreeSchedulerBuilder.UseScanInterval(System.TimeSpan)">

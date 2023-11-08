@@ -147,7 +147,7 @@ namespace FreeScheduler
         {
             if (_redis != null)
             {
-                var targetClusterId = _redis.Get($"freescheduler_cluster_{targetKey}_{id}");
+                var targetClusterId = _redis.Get($"freescheduler_cluster_{targetKey}:{id}");
                 if (!string.IsNullOrWhiteSpace(targetClusterId) && targetClusterId != ClusterId)
                 {
                     var waitId = Guid.NewGuid().ToString("n");
@@ -225,7 +225,7 @@ return nil", new[] { "freescheduler_cluster_offline", "freescheduler_cluster" },
                     _redis.Eval($"for a=1,#ARGV do redis.call('zrem','freescheduler_cluster_register_'..KEYS[1],ARGV[a]) if(redis.call('get','freescheduler_cluster_'..ARGV[a])==KEYS[1])then redis.call('del',KEYS[1]) end end return nil", 
                         new[] { clusterId } , scan.Select(a => a.member).ToArray());
                     var timestamp = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
-                    var taskIds = scan.Where(sr => sr.member.StartsWith("AddTask_")).Select(sr => sr.member.Substring(8)) //忽略内存任务 AddTempTask_
+                    var taskIds = scan.Where(sr => sr.member.StartsWith("AddTask:")).Select(sr => sr.member.Substring(8)) //忽略内存任务 AddTempTask_
                         .Where(taskId => _scheduler._tasks.ContainsKey(taskId) == false)
                         .Select(taskId => $"{timestamp}|{nameof(ReloadTask)}|{taskId}").ToArray();
                     _redis.LPush("freescheduler_cluster_alloc", taskIds);
@@ -248,16 +248,16 @@ return nil", new[] { "freescheduler_cluster_offline", "freescheduler_cluster" },
         public bool Register(string id, string targetKey)
         {
             var timestamp = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
-            var keys = new[] { $"freescheduler_cluster_{targetKey}_{id}", $"freescheduler_cluster_register_{ClusterId}" };
+            var keys = new[] { $"freescheduler_cluster_{targetKey}:{id}", $"freescheduler_cluster_register_{ClusterId}" };
             var result = _redis.Eval(@"if(redis.call('setnx',KEYS[1],ARGV[1])==1)then redis.call('zadd',KEYS[2],ARGV[2],ARGV[3]) return 1 end
 if(redis.call('hexists','freescheduler_cluster_offline',redis.call('get',KEYS[1]))==1)then redis.call('set',KEYS[1],ARGV[1]) redis.call('zadd',KEYS[2],ARGV[2],ARGV[3]) return 1 end return 0", 
-                keys, ClusterId, timestamp, $"{targetKey}_{id}")?.ToString();
+                keys, ClusterId, timestamp, $"{targetKey}:{id}")?.ToString();
 
             return result == "1";
         }
         public void Remove(string id, string targetKey)
         {
-            var keys = new[] { $"freescheduler_cluster_{targetKey}_{id}" };
+            var keys = new[] { $"freescheduler_cluster_{targetKey}:{id}" };
             _redis.Eval(@"local a=redis.call('get',KEYS[1]) if(a and a==ARGV[1])then
 redis.call('del',KEYS[1],'freescheduler_cluster_register_'..a) end return 1", keys, ClusterId);
         }

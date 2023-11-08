@@ -47,7 +47,7 @@ namespace Examples_FreeScheduler_WinformNet40
                 {
                     return TimeSpan.FromSeconds(5);
                 })
-                .UseFreeSql(_fsql)
+                .UseStorage(_fsql)
                 .Build();
         }
 

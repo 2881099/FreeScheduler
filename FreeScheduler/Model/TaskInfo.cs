@@ -143,7 +143,7 @@ namespace FreeScheduler
                 case TaskInterval.Custom:
 					throw new Exception("请使用 Scheduler 对象获取自定义间隔值");
             }
-			if (interval == 0) interval = 1;
+			if (interval == 0) interval = 1000;
 			return TimeSpan.FromMilliseconds(interval);
 		}
 	}

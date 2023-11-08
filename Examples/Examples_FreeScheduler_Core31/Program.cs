@@ -34,7 +34,7 @@ namespace Examples_FreeScheduler_Core31
                 {
                     Console.WriteLine($"[{DateTime.Now.ToString("HH:mm:ss.fff")}] {task.Topic} {task.Body} 被执行，还剩 {scheduler.QuantityTask} 个循环任务");
                 })
-                .UseFreeSql(fsql)
+                .UseStorage(fsql)
                 .Build();
 
             var taskid = scheduler.AddTask("保活", "sss", round: -1, 2);

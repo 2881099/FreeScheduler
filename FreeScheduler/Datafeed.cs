@@ -3,6 +3,7 @@ using FreeScheduler.TaskHandlers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace FreeScheduler
 {
@@ -27,10 +28,10 @@ namespace FreeScheduler
             var result = new ResultGetPage();
             var clusterRedis = scheduler._clusterContext._redis;
             var clusters = scheduler.ClusterId == null ? new ZMember[0] : clusterRedis.ZRangeByScoreWithScores("freescheduler_cluster", "-inf", "+inf");
-            var clusterTasks = new int[clusters.Length];
-            var clusterNames = new string[clusters.Length];
             if (clusters.Any())
             {
+                var clusterTasks = new int[clusters.Length];
+                var clusterNames = new string[clusters.Length];
                 using (var pipe = clusterRedis.StartPipe())
                 {
                     foreach (var cluster in clusters) pipe.ZCard($"freescheduler_cluster_register_{cluster.member}");
@@ -51,9 +52,9 @@ namespace FreeScheduler
             if (clusters.Any(a => a.member == clusterId))
             {
                 var taskIds = clusterRedis.ZRevRangeByLex($"freescheduler_cluster_register_{clusterId}", "+", "-", Math.Max(0, page - 1) * limit, limit);
+                taskIds = taskIds.Where(a => a.StartsWith("AddTask:")).Select(a => a.Substring(8)).ToArray();
                 if (taskIds.Any())
                 {
-                    taskIds = taskIds.Where(a => a.StartsWith("AddTask_")).Select(a => a.Substring(8)).ToArray();
                     if (scheduler._taskHandler is FreeSqlHandler fsqlHandler)
                     {
                         result.Tasks = fsqlHandler._fsql.Select<TaskInfo>()
@@ -64,12 +65,14 @@ namespace FreeScheduler
                     }
                     else if (scheduler._taskHandler is FreeRedisHandler redisHandler)
                     {
-                        result.Tasks = redisHandler._redis.HMGet<TaskInfo>("FreeScheduler_hset", taskIds).ToList();
+                        result.Tasks = redisHandler._redis.HMGet<TaskInfo>("FreeScheduler_hset", taskIds)
+                            .Where(a => status == null || a.Status == status)
+                            .ToList();
                     }
                 }
                 else
                     result.Tasks = new List<TaskInfo>();
-                result.Total = clusters.Where((a, index) => a.member == clusterId).Select((a, index) => clusterTasks[index]).FirstOrDefault();
+                result.Total = result.Clusters.Where((a, index) => a.Id == clusterId).Select(a => a.TaskCount).FirstOrDefault();
             }
             else
             {
@@ -85,9 +88,10 @@ namespace FreeScheduler
                 }
                 else if (scheduler._taskHandler is FreeRedisHandler redisHandler)
                 {
-                    var taskIds = redisHandler._redis.ZRevRangeByScore("FreeScheduler_zset_all", "+inf", "-inf", Math.Max(0, page - 1) * limit, limit);
-                    result.Tasks = redisHandler._redis.HMGet<TaskInfo>("FreeScheduler_hset", taskIds).ToList();
-                    result.Total = (int)redisHandler._redis.HLen("FreeScheduler_hset");
+                    var zkey = status == null ? "FreeScheduler_zset_all" : $"FreeScheduler_zset_{status}";
+                    var taskIds = redisHandler._redis.ZRevRangeByScore(zkey, "+inf", "-inf", Math.Max(0, page - 1) * limit, limit);
+                    result.Tasks = taskIds.Any() ? redisHandler._redis.HMGet<TaskInfo>("FreeScheduler_hset", taskIds).ToList() : new List<TaskInfo>();
+                    result.Total = (int)redisHandler._redis.ZCard(zkey);
                 }
                 else if (scheduler._taskHandler is TestHandler testHandler)
                 {
@@ -124,6 +128,46 @@ namespace FreeScheduler
             }
             return taskId;
         }
+        public static int CleanCompletedTask(Scheduler scheduler, int reserveSeconds)
+        {
+            var affrows = 0;
+            if (scheduler._taskHandler is FreeSqlHandler fsqlHandler)
+            {
+                var fsql = fsqlHandler._fsql;
+                var time1 = DateTime.UtcNow.AddSeconds(-reserveSeconds);
+                var taskIds = fsql.Select<TaskInfo>().Where(a => a.Status == TaskStatus.Completed && a.LastRunTime < time1).ToList(a => a.Id);
+                if (taskIds.Any())
+                {
+                    fsql.Transaction(() =>
+                    {
+                        affrows += fsql.Delete<TaskLog>().Where(a => taskIds.Contains(a.TaskId)).ExecuteAffrows();
+                        affrows += fsql.Delete<TaskInfo>().Where(a => taskIds.Contains(a.Id)).ExecuteAffrows();
+                    });
+                }
+            }
+            else if (scheduler._taskHandler is FreeRedisHandler redisHandler)
+            {
+                var redis = redisHandler._redis;
+                var _2020 = new DateTime(2020, 1, 1);
+                var taskScore = (decimal)DateTime.UtcNow.AddSeconds(-reserveSeconds).Subtract(_2020).TotalSeconds;
+                var taskIds = redis.ZRangeByScore($"FreeScheduler_zset_{TaskStatus.Completed}", 0, taskScore);
+                foreach (var taskId in taskIds)
+                {
+                    using (var pipe = redis.StartPipe())
+                    {
+                        pipe.HDel("FreeScheduler_hset", taskId);
+                        pipe.ZRem($"FreeScheduler_zset_all", taskId);
+                        pipe.ZRem($"FreeScheduler_zset_{TaskStatus.Running}", taskId);
+                        pipe.ZRem($"FreeScheduler_zset_{TaskStatus.Paused}", taskId);
+                        pipe.ZRem($"FreeScheduler_zset_{TaskStatus.Completed}", taskId);
+                        pipe.Del($"FreeScheduler_zset_log_all");
+                        pipe.Del($"FreeScheduler_zset_log:{taskId}");
+                        pipe.EndPipe();
+                    }
+                }
+            }
+            return affrows;
+        }
 
         public class ResultGetLogs
         {
@@ -145,12 +189,10 @@ namespace FreeScheduler
             }
             else if (scheduler._taskHandler is FreeRedisHandler redisHandler)
             {
-                if (string.IsNullOrWhiteSpace(taskId))
-                    throw new Exception($"{nameof(FreeRedisHandler)} 必须传入 {nameof(taskId)} 参数");
-
-                var logs = redisHandler._redis.ZRevRangeByScore($"FreeScheduler_zset_log_{taskId}", "+inf", "-inf", Math.Max(0, page - 1) * limit, limit);
+                var zkey = string.IsNullOrWhiteSpace(taskId) ? "FreeScheduler_zset_log_all" : $"FreeScheduler_zset_log:{taskId}";
+                var logs = redisHandler._redis.ZRevRangeByScore(zkey, "+inf", "-inf", Math.Max(0, page - 1) * limit, limit);
                 result.Logs = logs.Select(a => redisHandler._redis.Deserialize(a, typeof(TaskLog)) as TaskLog).ToList();
-                result.Total = (int)redisHandler._redis.ZCard($"FreeScheduler_zset_log_{taskId}");
+                result.Total = (int)redisHandler._redis.ZCard(zkey);
             }
             else if (scheduler._taskHandler is TestHandler testHandler)
             {

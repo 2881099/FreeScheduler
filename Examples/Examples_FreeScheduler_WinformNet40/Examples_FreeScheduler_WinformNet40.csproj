@@ -75,9 +75,6 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="FreeRedis">
-      <Version>1.0.2</Version>
-    </PackageReference>
     <PackageReference Include="FreeSql">
       <Version>3.2.666</Version>
     </PackageReference>
@@ -85,7 +82,7 @@
       <Version>3.2.666</Version>
     </PackageReference>
     <PackageReference Include="Newtonsoft.Json">
-      <Version>13.0.1</Version>
+      <Version>13.0.3</Version>
     </PackageReference>
   </ItemGroup>
   <ItemGroup>

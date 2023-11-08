@@ -27,8 +27,7 @@ static Scheduler scheduler = new FreeSchedulerBuilder()
 | Method | 说明 |
 | -- | -- |
 | OnExecuting(Action\<TaskInfo\> executing) | 任务触发 |
-| UseFreeSql() | 基于 数据库，使用 FreeSql ORM 持久化 |
-| UseFreeRedis() | 基于 Redis，使用 FreeRedis 持久化 |
+| UseStorage() | 基于 数据库或者 Redis 持久化 |
 | UseCluster() | 开启集群（依赖 Redis），支持跨进程互通 |
 | UseCustomInterval() | 自定义间隔（可实现 cron） |
 | UseScanInterval() | 扫描间隔（默认200ms），值越小触发精准 |

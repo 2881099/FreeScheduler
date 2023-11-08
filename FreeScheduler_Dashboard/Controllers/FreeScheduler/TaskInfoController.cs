@@ -12,13 +12,9 @@ namespace FreeSql.FreeScheduler.Controllers
     [Route("/FreeScheduler/[controller]")]
     public class TaskInfoController : Controller
     {
-        IFreeSql fsql;
-        RedisClient redis;
         Scheduler scheduler;
-        public TaskInfoController(IFreeSql orm, RedisClient redis, Scheduler scheduler)
+        public TaskInfoController(Scheduler scheduler)
         {
-            fsql = orm;
-            this.redis = redis;
             this.scheduler = scheduler;
         }
 

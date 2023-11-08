@@ -15,6 +15,7 @@ public class FreeSchedulerBuilder
     ClusterOptions _clusterOptions;
     ITaskIntervalCustomHandler _customIntervalHandler;
     TimeSpan _scanInterval = TimeSpan.FromMilliseconds(200);
+    int _reserveSeconds = 86400 * 7;
 
     /// <summary>
     /// 任务触发
@@ -26,23 +27,23 @@ public class FreeSchedulerBuilder
         return this;
     }
     /// <summary>
-    /// 基于 数据库，使用 FreeSql ORM 持久化<para></para>
-    /// UseFreeSql/UseFreeRedis 二选一
+    /// 基于 数据库，使用 FreeSql ORM 持久化，默认保存7天
     /// </summary>
-    public FreeSchedulerBuilder UseFreeSql(IFreeSql fsql)
+    public FreeSchedulerBuilder UseStorage(IFreeSql fsql, TimeSpan? reserveTime = null)
     {
-        if (_redis != null) throw new Exception("UseFreeSql/UseFreeRedis 二选一");
         _fsql = fsql;
+        if (_fsql != null) _redis = null;
+        _reserveSeconds = (int)(reserveTime ?? TimeSpan.FromDays(7)).TotalSeconds;
         return this;
     }
     /// <summary>
-    /// 基于 Redis，使用 FreeRedis 持久化<para></para>
-    /// UseFreeSql/UseFreeRedis 二选一
+    /// 基于 Redis，使用 FreeRedis 持久化，默认保存7天
     /// </summary>
-    public FreeSchedulerBuilder UseFreeRedis(IRedisClient redis)
+    public FreeSchedulerBuilder UseStorage(IRedisClient redis, TimeSpan? reserveTime = null)
     {
-        if (_fsql != null) throw new Exception("UseFreeSql/UseFreeRedis 二选一");
         _redis = redis as RedisClient;
+        if (_redis != null) _fsql = null;
+        _reserveSeconds = (int)(reserveTime ?? TimeSpan.FromDays(7)).TotalSeconds;
         return this;
     }
 
@@ -64,7 +65,7 @@ public class FreeSchedulerBuilder
     /// <summary>
     /// 自定义间隔（可实现 cron）
     /// </summary>
-    /// <param name="nextDelay"></param>
+    /// <param name="nextDelay">获取下一次定时间隔，返回 null 时结束</param>
     /// <returns></returns>
     public FreeSchedulerBuilder UseCustomInterval(Func<TaskInfo, TimeSpan?> nextDelay)
     {
@@ -87,12 +88,36 @@ public class FreeSchedulerBuilder
         else if (_redis != null) taskHandler = new FreeRedisTaskHandler(_redis) { Executing = _executing };
         else
         {
-            if (_clusterRedis != null) throw new Exception($"UseCluster 集群功能仅支持 UseFreeSql/UseFreeRedis 持久化");
+            if (_clusterRedis != null) throw new Exception($"UseCluster 集群功能仅支持 UseStorage 持久化");
             taskHandler = new MemoryTaskHandler() { Executing = _executing };
         }
         var scheduler = new Scheduler(taskHandler, _customIntervalHandler, _clusterRedis != null ? new ClusterContext(_clusterRedis, _clusterOptions) : null);
         scheduler.ScanInterval = _scanInterval;
+
+        if ((_fsql != null || _redis != null) && _reserveSeconds > 0) {
+            var cleanInterval = TimeSpan.FromMinutes(60);
+            if (_reserveSeconds < 60) cleanInterval = TimeSpan.FromSeconds(_reserveSeconds);
+            if (_reserveSeconds < 60 * 5) cleanInterval = TimeSpan.FromSeconds(20);
+            if (_reserveSeconds < 60 * 60) cleanInterval = TimeSpan.FromSeconds(60);
+            if (_reserveSeconds < 60 * 60 * 6) cleanInterval = TimeSpan.FromSeconds(120);
+            scheduler.AddTempTask(TimeSpan.FromSeconds(10), () => CleanCompletedTask(scheduler, _reserveSeconds, cleanInterval), false);
+        }
         return scheduler;
+    }
+    static void CleanCompletedTask(Scheduler scheduler, int reserveSeconds, TimeSpan cleanInterval)
+    {
+        try
+        {
+            Datafeed.CleanCompletedTask(scheduler, reserveSeconds);
+        }
+        catch(Exception ex)
+        {
+            Console.Write("==========" + ex.Message);
+        }
+        finally
+        {
+            scheduler.AddTempTask(cleanInterval, () => CleanCompletedTask(scheduler, reserveSeconds, cleanInterval), false);
+        }
     }
 
 

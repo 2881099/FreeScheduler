@@ -9,20 +9,18 @@ namespace FreeSql.FreeScheduler.Controllers
     [Route("/FreeScheduler/[controller]")]
     public class TaskLogController : Controller
     {
-        IFreeSql fsql;
-        public TaskLogController(IFreeSql orm)
+        Scheduler scheduler;
+        public TaskLogController(Scheduler scheduler)
         {
-            fsql = orm;
+            this.scheduler = scheduler;
         }
 
         [HttpGet]
-        async public Task<ActionResult> List([FromQuery] string key, [FromQuery] int limit = 20, [FromQuery] int page = 1)
+        async public Task<ActionResult> List([FromQuery] string taskId, [FromQuery] int limit = 20, [FromQuery] int page = 1)
         {
-            var select = fsql.Select<TaskLog>()
-                .WhereIf(!string.IsNullOrEmpty(key), a => a.TaskId.Contains(key) || a.Exception.Contains(key) || a.Remark.Contains(key));
-            var items = await select.Count(out var count).Page(page, limit).OrderByDescending(a => a.CreateTime).ToListAsync();
-            ViewBag.items = items;
-            ViewBag.count = count;
+            var dto = Datafeed.GetLogs(scheduler, taskId, limit, page);
+            ViewBag.items = dto.Logs;
+            ViewBag.count = dto.Total;
             return View();
         }
     }

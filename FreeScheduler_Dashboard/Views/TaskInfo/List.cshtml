@@ -51,13 +51,11 @@
 								<td>@item.Id</td>
 								<td>@item.Topic</td>
 								<td>@item.Interval @item.IntervalArgument</td>
-								<td class="text-right">
-									@(item.CurrentRound + "/" + item.Round)
-								</td>
+								<td class="text-right"><a href="../TaskLog/?taskId=@item.Id">@(item.CurrentRound + "/" + item.Round)</a></td>
 								<td>@item.Status</td>
 								<td>@item.Body</td>
 								<td>@item.CreateTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
-								<td>@item.LastRunTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
+								<td><a href="../TaskLog/?taskId=@item.Id">@item.LastRunTime.ToString("yyyy-MM-dd HH:mm:ss")</a></td>
 								<td>@item.ErrorTimes</td>
                             </tr>
 						}
