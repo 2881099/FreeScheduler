@@ -19,6 +19,11 @@
             离线：心跳停止后的秒数，默认值：30秒
             </summary>
         </member>
+        <member name="P:FreeScheduler.ClusterOptions.RedisPrefix">
+            <summary>
+            Redis key 前辍标识
+            </summary>
+        </member>
         <member name="M:FreeScheduler.Snowfake.#ctor(System.Int64)">
             <summary>
             机器码
@@ -377,12 +382,12 @@
             </summary>
             <returns></returns>
         </member>
-        <member name="M:FreeSchedulerBuilder.UseStorage(IFreeSql,System.Nullable{System.TimeSpan})">
+        <member name="M:FreeSchedulerBuilder.UseStorage(IFreeSql)">
             <summary>
             基于 数据库，使用 FreeSql ORM 持久化，默认保存7天
             </summary>
         </member>
-        <member name="M:FreeSchedulerBuilder.UseStorage(FreeRedis.IRedisClient,System.Nullable{System.TimeSpan})">
+        <member name="M:FreeSchedulerBuilder.UseStorage(FreeRedis.IRedisClient)">
             <summary>
             基于 Redis，使用 FreeRedis 持久化，默认保存7天
             </summary>

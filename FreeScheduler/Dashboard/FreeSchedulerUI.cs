@@ -70,7 +70,23 @@ namespace FreeScheduler
                             await Utils.Jsonp(context, new { code = 0, message = "成功", data = taskId });
                             return;
                         }
-                        await res.WriteAsync(Views.TaskInfo_add);
+                        var html = Views.TaskInfo_add;
+                        switch (req.Query["tpl"])
+                        {
+                            case "cleanCompletedTask":
+                                html = html + @"<script>
+(function() {
+    var form = $('#form_add')[0];
+    form.Topic.value = '[系统预留]清理已完成的任务';
+    form.Body.value = '86400';
+    $('#form_add #BodyLabel').html('清理多久之前的记录（单位：秒）<br>已完成的任务');
+    form.Round.value = -1;
+})()
+</script>";
+                                break;
+                        }
+
+                        await res.WriteAsync(html);
                         return;
                     }
                     if (reqPath.StartsWith($"{requestPathBase}taskinfo/calltask"))

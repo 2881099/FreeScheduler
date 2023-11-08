@@ -15,7 +15,7 @@ redis.Deserialize = (json, type) => JsonConvert.DeserializeObject(json, type);
 redis.Notice += (s, e) =>
 {
     if (e.Exception != null)
-        Console.WriteLine(e.Log);
+    Console.WriteLine(e.Log);
 };
 
 Scheduler scheduler = new FreeSchedulerBuilder()
@@ -23,7 +23,7 @@ Scheduler scheduler = new FreeSchedulerBuilder()
     {
         Console.WriteLine($"[{DateTime.Now.ToString("HH:mm:ss.fff")}] {task.Topic} ±»Ö´ÐÐ");
     })
-    .UseStorage(redis, TimeSpan.FromDays(1))
+    .UseStorage(redis)
     .UseCluster(redis, new ClusterOptions
     {
         Name = Environment.GetCommandLineArgs().FirstOrDefault(a => a.StartsWith("--name="))?.Substring(7),

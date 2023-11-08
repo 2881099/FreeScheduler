@@ -30,19 +30,19 @@ namespace FreeScheduler
             var result = new ResultGetPage();
             result.Timestamp = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
             result.Description = $"集群: {(scheduler.ClusterId == null ? "否" : $"是, 名称: {(string.IsNullOrWhiteSpace(scheduler.ClusterOptions.Name) ? scheduler.ClusterId : scheduler.ClusterOptions.Name)}")}";
-            if (scheduler._taskHandler is FreeSqlHandler) result.Description += $", 存储: FreeSql, 保留: {TimeSpan.FromSeconds(scheduler._reserveSeconds).TotalHours}小时";
-            else if (scheduler._taskHandler is FreeRedisHandler) result.Description += $", 存储: Redis, 保留: {TimeSpan.FromSeconds(scheduler._reserveSeconds).TotalHours}小时";
+            if (scheduler._taskHandler is FreeSqlHandler) result.Description += $", 存储: FreeSql";
+            else if (scheduler._taskHandler is FreeRedisHandler) result.Description += $", 存储: Redis";
             else if (scheduler._taskHandler is TestHandler) result.Description += $", 存储: Memory";
             var clusterRedis = scheduler._clusterContext?._redis;
-            var clusters = scheduler.ClusterId == null ? new ZMember[0] : clusterRedis.ZRangeByScoreWithScores("freescheduler_cluster", "-inf", "+inf");
+            var clusters = scheduler.ClusterId == null ? new ZMember[0] : clusterRedis.ZRangeByScoreWithScores($"{scheduler.ClusterOptions.RedisPrefix}", "-inf", "+inf");
             if (clusters.Any())
             {
                 var clusterTasks = new int[clusters.Length];
                 var clusterNames = new string[clusters.Length];
                 using (var pipe = clusterRedis.StartPipe())
                 {
-                    foreach (var cluster in clusters) pipe.ZCard($"freescheduler_cluster_register_{cluster.member}");
-                    foreach (var cluster in clusters) pipe.HGet($"freescheduler_cluster_name", cluster.member);
+                    foreach (var cluster in clusters) pipe.ZCard($"{scheduler.ClusterOptions.RedisPrefix}_register_{cluster.member}");
+                    foreach (var cluster in clusters) pipe.HGet($"{scheduler.ClusterOptions.RedisPrefix}_name", cluster.member);
                     var ret = pipe.EndPipe();
                     for (var a = 0; a < clusters.Length; a++)
                         clusterTasks[a] = int.TryParse(ret[a]?.ToString() ?? "0", out var tryint) ? tryint : 0;
@@ -58,8 +58,8 @@ namespace FreeScheduler
             }
             if (clusters.Any(a => a.member == clusterId))
             {
-                var taskIds = clusterRedis.ZRevRangeByLex($"freescheduler_cluster_register_{clusterId}", "+", "-", Math.Max(0, page - 1) * limit, limit);
-                taskIds = taskIds.Where(a => a.StartsWith($"{nameof(Scheduler.AddTask)}:")).Select(a => a.Substring(8)).ToArray();
+                var taskIds = clusterRedis.ZRevRangeByLex($"{scheduler.ClusterOptions.RedisPrefix}_register_{clusterId}", "+", "-", Math.Max(0, page - 1) * limit, limit);
+                taskIds = taskIds.Where(a => a.StartsWith($"{nameof(Scheduler.AddTask)}_")).Select(a => a.Substring(8)).ToArray();
                 if (taskIds.Any())
                 {
                     if (scheduler._taskHandler is FreeSqlHandler fsqlHandler)

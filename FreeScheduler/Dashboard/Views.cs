@@ -110,7 +110,8 @@ if (sb.length > 0) $('#dto_list').html(sb);
 <script type=""text/javascript"">
 	(function () {
 var dto = {};
-$('#dto_Description').html(dto.Description);
+debugger
+$('#dto_Description').html(dto.Description.replace(/存储\: (FreeSql|Redis)/, '存储: $1 <a id=""cleanCompletedTask"" href=""./add?tpl=cleanCompletedTask"">数据太多如何清理？</a>'));
 var fscClusterText = [];
 var fscClusterValue = [];
 for (var a = 0; dto.Clusters != null && a < dto.Clusters.length; a++) {
@@ -209,7 +210,7 @@ if (sb.length > 0) $('#dto_list').html(sb);
 							<td><input name=""Topic"" type=""text"" class=""datepicker"" style=""width:60%;"" placeholder=""用在 OnExecuting 区分任务"" /></td>
 						</tr>
 					    <tr>
-							<td>数据</td>
+							<td id=""BodyLabel"">数据</td>
 							<td><textarea name=""Body"" style=""width:60%;height:100px;"" editor=""ueditor"" placeholder=""用在 OnExecuting 区分相同 Title 任务的参数数据""></textarea></td>
 						</tr>
 					    <tr>

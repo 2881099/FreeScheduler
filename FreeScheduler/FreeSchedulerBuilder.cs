@@ -2,6 +2,7 @@
 using FreeScheduler;
 using FreeScheduler.TaskHandlers;
 using System;
+using System.Reflection;
 
 /// <summary>
 /// Scheduler 对象构建器
@@ -15,7 +16,6 @@ public class FreeSchedulerBuilder
     ClusterOptions _clusterOptions;
     ITaskIntervalCustomHandler _customIntervalHandler;
     TimeSpan _scanInterval = TimeSpan.FromMilliseconds(200);
-    int _reserveSeconds = 86400 * 7;
 
     /// <summary>
     /// 任务触发
@@ -29,21 +29,22 @@ public class FreeSchedulerBuilder
     /// <summary>
     /// 基于 数据库，使用 FreeSql ORM 持久化，默认保存7天
     /// </summary>
-    public FreeSchedulerBuilder UseStorage(IFreeSql fsql, TimeSpan? reserveTime = null)
+    public FreeSchedulerBuilder UseStorage(IFreeSql fsql)
     {
         _fsql = fsql;
         if (_fsql != null) _redis = null;
-        _reserveSeconds = (int)(reserveTime ?? TimeSpan.FromDays(7)).TotalSeconds;
         return this;
     }
     /// <summary>
     /// 基于 Redis，使用 FreeRedis 持久化，默认保存7天
     /// </summary>
-    public FreeSchedulerBuilder UseStorage(IRedisClient redis, TimeSpan? reserveTime = null)
+    public FreeSchedulerBuilder UseStorage(IRedisClient redis)
     {
+        var prefix = redis?.GetType().GetProperty("Prefix", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(redis, new object[0]) as string;
+        if (string.IsNullOrEmpty(prefix) == false) throw new Exception($"UseStorage 不支持设置了 Prefix 前辍的 FreeRedis");
+
         _redis = redis as RedisClient;
         if (_redis != null) _fsql = null;
-        _reserveSeconds = (int)(reserveTime ?? TimeSpan.FromDays(7)).TotalSeconds;
         return this;
     }
 
@@ -58,6 +59,9 @@ public class FreeSchedulerBuilder
     /// </summary>
     public FreeSchedulerBuilder UseCluster(IRedisClient redis, ClusterOptions options = null)
     {
+        var prefix = redis?.GetType().GetProperty("Prefix", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(redis, new object[0]) as string;
+        if (string.IsNullOrEmpty(prefix) == false) throw new Exception($"由于 UseCluster 核心代码使用了较多 LuaScript，因此不支持设置 FreeRedis Prefix 前辍");
+
         _clusterRedis = redis as RedisClient;
         _clusterOptions = options;
         return this;
@@ -93,34 +97,8 @@ public class FreeSchedulerBuilder
         }
         var scheduler = new Scheduler(taskHandler, _customIntervalHandler, _clusterRedis != null ? new ClusterContext(_clusterRedis, _clusterOptions) : null);
         scheduler.ScanInterval = _scanInterval;
-        scheduler._reserveSeconds = _reserveSeconds;
-
-        if (_reserveSeconds > 0 && (_fsql != null || _redis != null))
-        {
-            var cleanInterval = TimeSpan.FromMinutes(60);
-            if (_reserveSeconds < 60) cleanInterval = TimeSpan.FromSeconds(_reserveSeconds);
-            if (_reserveSeconds < 60 * 5) cleanInterval = TimeSpan.FromSeconds(20);
-            if (_reserveSeconds < 60 * 60) cleanInterval = TimeSpan.FromSeconds(60);
-            if (_reserveSeconds < 60 * 60 * 6) cleanInterval = TimeSpan.FromSeconds(120);
-            scheduler.AddTempTask(TimeSpan.FromSeconds(10), () => CleanCompletedTask(scheduler, _reserveSeconds, cleanInterval), false);
-        }
 
         return scheduler;
-    }
-    static void CleanCompletedTask(Scheduler scheduler, int reserveSeconds, TimeSpan cleanInterval)
-    {
-        try
-        {
-            Datafeed.CleanCompletedTask(scheduler, reserveSeconds);
-        }
-        catch(Exception ex)
-        {
-            Console.Write("==========" + ex.Message);
-        }
-        finally
-        {
-            scheduler.AddTempTask(cleanInterval, () => CleanCompletedTask(scheduler, reserveSeconds, cleanInterval), false);
-        }
     }
 
 
@@ -143,7 +121,20 @@ public class FreeSchedulerBuilder
         public Action<TaskInfo> Executing;
         public override void OnExecuting(Scheduler scheduler, TaskInfo task)
         {
+            if (task.Topic == "[系统预留]清理已完成的任务")
+            {
+                var affrows = Datafeed.CleanCompletedTask(scheduler, (int)uint.Parse(task.Body) + 1);
+                task.InternalExecutingLog = $"已清理 {affrows} 条数据";
+            }
             Executing?.Invoke(task);
+        }
+        internal override void InternalOnExecuted(TaskInfo task, TaskLog result)
+        {
+            if (task.Topic == "[系统预留]清理已完成的任务")
+            {
+                result.Remark += $"，{task.InternalExecutingLog}";
+                task.InternalExecutingLog = null;
+            }
         }
     }
     class FreeRedisTaskHandler : FreeRedisHandler
@@ -152,7 +143,20 @@ public class FreeSchedulerBuilder
         public Action<TaskInfo> Executing;
         public override void OnExecuting(Scheduler scheduler, TaskInfo task)
         {
+            if (task.Topic == "[系统预留]清理已完成的任务")
+            {
+                var affrows = Datafeed.CleanCompletedTask(scheduler, (int)uint.Parse(task.Body) + 1);
+                task.InternalExecutingLog = $"已清理 {affrows} 条数据";
+            }
             Executing?.Invoke(task);
+        }
+        internal override void InternalOnExecuted(TaskInfo task, TaskLog result)
+        {
+            if (task.Topic == "[系统预留]清理已完成的任务")
+            {
+                result.Remark += $"，{task.InternalExecutingLog}";
+                task.InternalExecutingLog = null;
+            }
         }
     }
 }
