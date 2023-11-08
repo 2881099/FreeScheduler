@@ -135,7 +135,7 @@ for (var a = 0; a < dto.Tasks.length; a++) {
 	if (task.Status == 2 || task.Status == 'Completed') return '';
 	var btn = '';
 	if (task.Status == 1 || task.Status == 'Paused') btn += '<input type=""button"" class=""btn btn-xs btn-success"" value=""恢复"" onclick=""top.callTask(\'resume\', \'' + task.Id + '\')"" /> ';
-	if (task.Status == 0 || task.Status == 'Running') btn += '<input type=""button"" class=""btn btn-xs btn-warning"" value=""暂时"" onclick=""top.callTask(\'pause\', \'' + task.Id + '\')"" /> ';
+	if (task.Status == 0 || task.Status == 'Running') btn += '<input type=""button"" class=""btn btn-xs btn-warning"" value=""暂停"" onclick=""top.callTask(\'pause\', \'' + task.Id + '\')"" /> ';
 	return btn + '<input type=""button"" class=""btn btn-xs btn-info"" value=""立即触发"" onclick=""top.callTask(\'run\', \'' + task.Id + '\')"" />';
 })() + '\
 								</td>\
