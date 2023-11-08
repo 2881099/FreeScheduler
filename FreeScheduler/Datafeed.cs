@@ -11,6 +11,7 @@ namespace FreeScheduler
 	{
         public class ResultGetPage
         {
+            public string Description { get; set; }
             public int Total { get; set; }
             public List<TaskInfo> Tasks { get; set; }
             public ClusterInfo[] Clusters { get; set; }
@@ -26,7 +27,11 @@ namespace FreeScheduler
         public static ResultGetPage GetPage(Scheduler scheduler, string clusterId, TaskStatus? status, int limit = 20, int page = 1)
 		{
             var result = new ResultGetPage();
-            var clusterRedis = scheduler._clusterContext._redis;
+            result.Description = $"集群: {(scheduler.ClusterId == null ? "否" : $"是, 名称: {(string.IsNullOrWhiteSpace(scheduler.ClusterOptions.Name) ? scheduler.ClusterId : scheduler.ClusterOptions.Name)}")}";
+            if (scheduler._taskHandler is FreeSqlHandler) result.Description += $", 存储: FreeSql, 保留: {TimeSpan.FromSeconds(scheduler._reserveSeconds).TotalHours}小时";
+            else if (scheduler._taskHandler is FreeRedisHandler) result.Description += $", 存储: Redis, 保留: {TimeSpan.FromSeconds(scheduler._reserveSeconds).TotalHours}小时";
+            else if (scheduler._taskHandler is TestHandler) result.Description += $", 存储: Memory";
+            var clusterRedis = scheduler._clusterContext?._redis;
             var clusters = scheduler.ClusterId == null ? new ZMember[0] : clusterRedis.ZRangeByScoreWithScores("freescheduler_cluster", "-inf", "+inf");
             if (clusters.Any())
             {
@@ -52,7 +57,7 @@ namespace FreeScheduler
             if (clusters.Any(a => a.member == clusterId))
             {
                 var taskIds = clusterRedis.ZRevRangeByLex($"freescheduler_cluster_register_{clusterId}", "+", "-", Math.Max(0, page - 1) * limit, limit);
-                taskIds = taskIds.Where(a => a.StartsWith("AddTask:")).Select(a => a.Substring(8)).ToArray();
+                taskIds = taskIds.Where(a => a.StartsWith($"{nameof(Scheduler.AddTask)}:")).Select(a => a.Substring(8)).ToArray();
                 if (taskIds.Any())
                 {
                     if (scheduler._taskHandler is FreeSqlHandler fsqlHandler)
@@ -95,7 +100,7 @@ namespace FreeScheduler
                 }
                 else if (scheduler._taskHandler is TestHandler testHandler)
                 {
-                    var queryTasks = scheduler._tasks.Values.Where(a => status == null || a.Status == status.Value);
+                    var queryTasks = testHandler._memoryTasks.Values.Where(a => status == null || a.Status == status.Value);
                     result.Total = queryTasks.Count();
                     result.Tasks = queryTasks.OrderByDescending(a => a.Id).Skip(Math.Max(0, page - 1) * limit).Take(limit).ToList();
                 }
@@ -194,9 +199,9 @@ namespace FreeScheduler
                 result.Logs = logs.Select(a => redisHandler._redis.Deserialize(a, typeof(TaskLog)) as TaskLog).ToList();
                 result.Total = (int)redisHandler._redis.ZCard(zkey);
             }
-            else if (scheduler._taskHandler is TestHandler testHandler)
+            else if (scheduler._taskHandler is TestHandler)
             {
-                throw new Exception($"{nameof(TestHandler)} 未实现 {nameof(TaskLog)} 记录");
+                throw new Exception($"{nameof(TestHandler)} 未实现 {nameof(TaskLog)} 日志记录");
             }
             return result;
         }

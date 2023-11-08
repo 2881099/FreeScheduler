@@ -93,8 +93,10 @@ public class FreeSchedulerBuilder
         }
         var scheduler = new Scheduler(taskHandler, _customIntervalHandler, _clusterRedis != null ? new ClusterContext(_clusterRedis, _clusterOptions) : null);
         scheduler.ScanInterval = _scanInterval;
+        scheduler._reserveSeconds = _reserveSeconds;
 
-        if ((_fsql != null || _redis != null) && _reserveSeconds > 0) {
+        if (_reserveSeconds > 0 && (_fsql != null || _redis != null))
+        {
             var cleanInterval = TimeSpan.FromMinutes(60);
             if (_reserveSeconds < 60) cleanInterval = TimeSpan.FromSeconds(_reserveSeconds);
             if (_reserveSeconds < 60 * 5) cleanInterval = TimeSpan.FromSeconds(20);
@@ -102,6 +104,7 @@ public class FreeSchedulerBuilder
             if (_reserveSeconds < 60 * 60 * 6) cleanInterval = TimeSpan.FromSeconds(120);
             scheduler.AddTempTask(TimeSpan.FromSeconds(10), () => CleanCompletedTask(scheduler, _reserveSeconds, cleanInterval), false);
         }
+
         return scheduler;
     }
     static void CleanCompletedTask(Scheduler scheduler, int reserveSeconds, TimeSpan cleanInterval)

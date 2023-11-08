@@ -222,20 +222,22 @@ return nil", new[] { "freescheduler_cluster_offline", "freescheduler_cluster" },
                 foreach (var scan in _redis.ZScan(regkey, "*", 100))
                 {
                     if (scan.Any() == false) continue;
-                    _redis.Eval($"for a=1,#ARGV do redis.call('zrem','freescheduler_cluster_register_'..KEYS[1],ARGV[a]) if(redis.call('get','freescheduler_cluster_'..ARGV[a])==KEYS[1])then redis.call('del',KEYS[1]) end end return nil", 
-                        new[] { clusterId } , scan.Select(a => a.member).ToArray());
+                    _redis.Eval($"for a=1,#ARGV do redis.call('zrem','freescheduler_cluster_register_'..KEYS[1],ARGV[a]) if(redis.call('get','freescheduler_cluster_'..ARGV[a])==KEYS[1])then redis.call('del',KEYS[1]) end end return nil",
+                        new[] { clusterId }, scan.Select(a => a.member).ToArray());
                     var timestamp = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
-                    var taskIds = scan.Where(sr => sr.member.StartsWith("AddTask:")).Select(sr => sr.member.Substring(8)) //忽略内存任务 AddTempTask_
+                    var taskIds = scan.Where(sr => sr.member.StartsWith($"{nameof(Scheduler.AddTask)}:")).Select(sr => sr.member.Substring(8)) //忽略内存任务 AddTempTask_
                         .Where(taskId => _scheduler._tasks.ContainsKey(taskId) == false)
                         .Select(taskId => $"{timestamp}|{nameof(ReloadTask)}|{taskId}").ToArray();
-                    _redis.LPush("freescheduler_cluster_alloc", taskIds);
+                    if (taskIds.Any())
+                        _redis.LPush("freescheduler_cluster_alloc", taskIds);
                     break; //数量较多时，延迟处理
                 }
                 if (_redis.ZCard(regkey) > 0)
                     _scheduler.AddTempTask(TimeSpan.FromMilliseconds(1_000), () => ReloadTask(clusterId), false);
             }
-            catch
+            catch (Exception ex)
             {
+                Console.WriteLine("=======================ReloadTask======" + ex.Message);
                 _scheduler.AddTempTask(TimeSpan.FromMilliseconds(30_000), () => ReloadTask(clusterId), false);
             }
         }
@@ -259,7 +261,7 @@ if(redis.call('hexists','freescheduler_cluster_offline',redis.call('get',KEYS[1]
         {
             var keys = new[] { $"freescheduler_cluster_{targetKey}:{id}" };
             _redis.Eval(@"local a=redis.call('get',KEYS[1]) if(a and a==ARGV[1])then
-redis.call('del',KEYS[1],'freescheduler_cluster_register_'..a) end return 1", keys, ClusterId);
+redis.call('del',KEYS[1]) redis.call('zrem','freescheduler_cluster_register_'..a,ARGV[2]) end return 1", keys, ClusterId, $"{targetKey}:{id}");
         }
     }
 }

@@ -34,6 +34,7 @@ namespace FreeScheduler
 		internal ClusterContext _clusterContext;
 		public string ClusterId => _clusterContext?.ClusterId;
 		public ClusterOptions ClusterOptions => _clusterContext?.Options;
+		internal int _reserveSeconds; //内部使用
 
         #region Dispose
         ~Scheduler() => Dispose();

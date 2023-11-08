@@ -6,7 +6,7 @@
 
 <div class="box">
 	<div class="box-header with-border">
-		<h3 id="box-title" class="box-title"></h3>
+		<h3 id="box-title" class="box-title"></h3> （@dto.Description）
 		<span class="form-group mr15"></span><a href="./add" data-toggle="modal" class="btn btn-success pull-right">添加</a>
 	</div>
 	<div class="box-body">
@@ -51,11 +51,29 @@
 								<td>@item.Id</td>
 								<td>@item.Topic</td>
 								<td>@item.Interval @item.IntervalArgument</td>
-								<td class="text-right"><a href="../TaskLog/?taskId=@item.Id">@(item.CurrentRound + "/" + item.Round)</a></td>
+								<td class="text-right">
+									@if (dto.Description.Contains("存储: Memory"))
+									{
+										@(item.CurrentRound + "/" + item.Round)
+									}
+									else
+									{
+										<a href="../TaskLog/?taskId=@item.Id">@(item.CurrentRound + "/" + item.Round)</a>
+									}
+								</td>
 								<td>@item.Status</td>
 								<td>@item.Body</td>
 								<td>@item.CreateTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
-								<td><a href="../TaskLog/?taskId=@item.Id">@item.LastRunTime.ToString("yyyy-MM-dd HH:mm:ss")</a></td>
+								<td>
+									@if (dto.Description.Contains("存储: Memory"))
+									{
+										@item.LastRunTime.ToString("yyyy-MM-dd HH:mm:ss")
+									}
+									else
+									{
+										<a href="../TaskLog/?taskId=@item.Id">@item.LastRunTime.ToString("yyyy-MM-dd HH:mm:ss")</a>
+									}
+								</td>
 								<td>@item.ErrorTimes</td>
                             </tr>
 						}
@@ -107,7 +125,7 @@
 		var fqs = _clone(top.mainViewNav.query);
 		delete fqs.page;
 		var fsc = [
-			{ name: '集群', field: 'clusterId', single: 1, text: @Html.Json(dto.Clusters.Select((a, index) => getClusterText(index, a))), value: @Html.Json(dto.Clusters.Select(a => a.Id)) },
+			{ name: '集群', field: 'clusterId', single: 1, text: @Html.Json(dto.Clusters?.Select((a, index) => getClusterText(index, a))), value: @Html.Json(dto.Clusters?.Select(a => a.Id)) },
 			{ name: '状态', field: 'status', single: 1, text: ['运行中','暂停中','已完成'], value: [0,1,2] },
 			null
 		];
