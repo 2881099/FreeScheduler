@@ -43,7 +43,7 @@
 										}
 										@if (item.Status == FreeScheduler.TaskStatus.Running)
 										{
-											<input type="button" class="btn btn-xs btn-warning" value="暂时" onclick="top.callTask('pause', '@item.Id')" />
+											<input type="button" class="btn btn-xs btn-warning" value="暂停" onclick="top.callTask('pause', '@item.Id')" />
 										}
 										<input type="button" class="btn btn-xs btn-info" value="立即触发" onclick="top.callTask('run', '@item.Id')" />
 									}
