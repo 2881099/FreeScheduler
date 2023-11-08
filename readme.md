@@ -27,7 +27,7 @@ static Scheduler scheduler = new FreeSchedulerBuilder()
 | Method | 说明 |
 | -- | -- |
 | OnExecuting(Action\<TaskInfo\> executing) | 任务触发 |
-| UseStorage() | 基于 数据库或者 Redis 持久化，默认保留7天数据 |
+| UseStorage() | 基于 数据库或者 Redis 持久化 |
 | UseCluster() | 开启集群（依赖 Redis），支持跨进程互通 |
 | UseCustomInterval() | 自定义间隔（可实现 cron） |
 | UseScanInterval() | 扫描间隔（默认200ms），值越小触发精准 |
@@ -117,7 +117,16 @@ new FreeSchedulerBuilder()
 | TaskInfo[] FindTask(lambda) | 查询正在运行中的任务 |
 | int QuantityTask | 任务数量 |
 
-3、管理任务
+3、预留任务
+
+> [系统预留]清理已完成的任务
+
+```csharp
+//每小时触发，定期清理24小时之前的数据（单位：秒）
+scheduler.AddTask("[系统预留]清理已完成的任务", "86400", round: -1, 3600);
+```
+
+4、管理任务
 
 ```csharp
 // 使用 FreeSql 或者 SQL 查询 TaskInfo、TaskLog 两个表进行分页显示
