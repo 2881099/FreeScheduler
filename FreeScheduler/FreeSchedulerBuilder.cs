@@ -120,56 +120,30 @@ public class FreeSchedulerBuilder
     {
         public FreeSqlTaskHandler(IFreeSql fsql) : base(fsql) { }
         public Action<TaskInfo> Executing;
-        ConcurrentDictionary<string, string> _remarks = new ConcurrentDictionary<string, string>();
 
         public override void OnExecuting(Scheduler scheduler, TaskInfo task)
         {
             if (task.Topic == "[系统预留]清理已完成的任务")
             {
                 var affrows = Datafeed.CleanCompletedTask(scheduler, (int)uint.Parse(task.Body) + 1);
-                var remark = $"已清理 {affrows} 条数据";
-                _remarks.AddOrUpdate(task.Id, remark, (k, v) => remark);
+                task.LogRemark($"已清理 {affrows} 条数据");
             }
             Executing?.Invoke(task);
-        }
-        internal override void InternalOnExecuted(TaskInfo task, TaskLog result)
-        {
-            if (task.Topic == "[系统预留]清理已完成的任务")
-            {
-                if (_remarks.TryGetValue(task.Id, out var remark))
-                {
-                    _remarks.TryRemove(task.Id, out var _);
-                    result.Remark += $"，{remark}";
-                }
-            }
         }
     }
     class FreeRedisTaskHandler : FreeRedisHandler
     {
         public FreeRedisTaskHandler(RedisClient redis) : base(redis) { }
         public Action<TaskInfo> Executing;
-        ConcurrentDictionary<string, string> _remarks = new ConcurrentDictionary<string, string>();
 
         public override void OnExecuting(Scheduler scheduler, TaskInfo task)
         {
             if (task.Topic == "[系统预留]清理已完成的任务")
             {
                 var affrows = Datafeed.CleanCompletedTask(scheduler, (int)uint.Parse(task.Body) + 1);
-                var remark = $"已清理 {affrows} 条数据";
-                _remarks.AddOrUpdate(task.Id, remark, (k, v) => remark);
+                task.LogRemark($"已清理 {affrows} 条数据");
             }
             Executing?.Invoke(task);
-        }
-        internal override void InternalOnExecuted(TaskInfo task, TaskLog result)
-        {
-            if (task.Topic == "[系统预留]清理已完成的任务")
-            {
-                if (_remarks.TryGetValue(task.Id, out var remark))
-                {
-                    _remarks.TryRemove(task.Id, out var _);
-                    result.Remark += $"，{remark}";
-                }
-            }
         }
     }
 }

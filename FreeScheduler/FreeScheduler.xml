@@ -384,12 +384,12 @@
         </member>
         <member name="M:FreeSchedulerBuilder.UseStorage(IFreeSql)">
             <summary>
-            基于 数据库，使用 FreeSql ORM 持久化，默认保存7天
+            基于 数据库，使用 FreeSql ORM 持久化
             </summary>
         </member>
         <member name="M:FreeSchedulerBuilder.UseStorage(FreeRedis.IRedisClient)">
             <summary>
-            基于 Redis，使用 FreeRedis 持久化，默认保存7天
+            基于 Redis，使用 FreeRedis 持久化
             </summary>
         </member>
         <member name="M:FreeSchedulerBuilder.UseCluster(FreeRedis.IRedisClient,FreeScheduler.ClusterOptions)">

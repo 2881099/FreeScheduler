@@ -60,7 +60,6 @@ namespace FreeScheduler.TaskHandlers
         {
             try
             {
-                InternalOnExecuted(task, result);
                 _fsql.Transaction(() =>
                 {
                     _fsql.Update<TaskInfo>().NoneParameter().SetSource(task)
@@ -75,7 +74,6 @@ namespace FreeScheduler.TaskHandlers
             }
         }
 
-        internal virtual void InternalOnExecuted(TaskInfo task, TaskLog result) { }
         public virtual void OnExecuting(Scheduler scheduler, TaskInfo task)
         {
             Console.WriteLine($"[{DateTime.Now.ToString("HH:mm:ss")}] {task.Topic} 被执行，还剩 {scheduler.QuantityTask} 个循环任务");

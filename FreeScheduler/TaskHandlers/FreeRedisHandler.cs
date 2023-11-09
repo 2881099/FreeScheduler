@@ -55,7 +55,6 @@ namespace FreeScheduler.TaskHandlers
         {
             try
             {
-                InternalOnExecuted(task, result);
                 var t = Load(task.Id);
                 var status = t.Status;
                 t.CurrentRound = task.CurrentRound;
@@ -83,7 +82,6 @@ namespace FreeScheduler.TaskHandlers
 }
         readonly DateTime _2020 = new DateTime(2020, 1, 1);
 
-        internal virtual void InternalOnExecuted(TaskInfo task, TaskLog result) { }
         public virtual void OnExecuting(Scheduler scheduler, TaskInfo task)
         {
             Console.WriteLine($"[{DateTime.Now.ToString("HH:mm:ss")}] {task.Topic} 被执行，还剩 {scheduler.QuantityTask} 个循环任务");
