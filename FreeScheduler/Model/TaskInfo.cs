@@ -64,8 +64,8 @@ namespace FreeScheduler
 		internal int IncrementErrorTimes() => Interlocked.Increment(ref _errorTimes);
 
 		internal int InternalFlag { get; set; }
-		internal string LogRemarkValue { get; set; }
-		public void LogRemark(string remark) => LogRemarkValue = remark;
+		internal string RemarkValue { get; set; }
+		public void Remark(string remark) => RemarkValue = remark;
 
         public TimeSpan? GetInterval(int curRound)
 		{

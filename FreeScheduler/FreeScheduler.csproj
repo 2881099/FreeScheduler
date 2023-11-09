@@ -2,7 +2,7 @@
 
 	<PropertyGroup>
 		<TargetFrameworks>net70;net60;net50;netcoreapp31;netstandard2.0;net40</TargetFrameworks>
-		<Version>2.0.6</Version>
+		<Version>2.0.7</Version>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<Authors>YeXiangQin</Authors>
 		<Description>轻量化定时任务调度，支持集群任务、临时的延时任务和重复循环任务，可按秒，每天/每周/每月固定时间，自定义间隔执行，支持 .NET Core 2.1+、.NET Framework 4.0+ 运行环境。</Description>
