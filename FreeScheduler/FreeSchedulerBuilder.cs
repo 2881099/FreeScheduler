@@ -27,7 +27,7 @@ public class FreeSchedulerBuilder
         return this;
     }
     /// <summary>
-    /// 基于 数据库，使用 FreeSql ORM 持久化，默认保存7天
+    /// 基于 数据库，使用 FreeSql ORM 持久化
     /// </summary>
     public FreeSchedulerBuilder UseStorage(IFreeSql fsql)
     {
@@ -36,7 +36,7 @@ public class FreeSchedulerBuilder
         return this;
     }
     /// <summary>
-    /// 基于 Redis，使用 FreeRedis 持久化，默认保存7天
+    /// 基于 Redis，使用 FreeRedis 持久化
     /// </summary>
     public FreeSchedulerBuilder UseStorage(IRedisClient redis)
     {
