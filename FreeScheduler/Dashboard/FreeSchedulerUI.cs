@@ -124,6 +124,14 @@ namespace FreeScheduler
                             req.Query["taskId"].FirstOrDefault(),
                             int.TryParse(req.Query["limit"].FirstOrDefault() ?? "20", out var trylimit) ? trylimit : 20,
                             int.TryParse(req.Query["page"].FirstOrDefault() ?? "1", out var trypage) ? trypage : 1);
+                        if (req.Query["download"] == "1")
+                        {
+                            res.ContentType = "application/x-compress";
+                            res.Headers["Content-Disposition"] = $"attachment;filename=log.txt";
+                            await res.WriteAsync($"日志总数量：{dto.Total} 本次下载数量：{Math.Min(dto.Total, trylimit)}\r\n");
+                            foreach (var log in dto.Logs) await res.WriteAsync($"[{log.CreateTime.AddHours(8).ToString("yyyy-MM-dd")}] {log.TaskId} 第{log.Round}轮 {(log.Success ? "成功" : "失败")} {log.ElapsedMilliseconds}ms {log.Remark}{(string.IsNullOrWhiteSpace(log.Exception) ? "" : $" 报错：{log.Exception}")}\r\n");
+                            return;
+                        }
                         await res.WriteAsync(Views.TaskLog_list.Replace("var dto = {};", "var dto = " + Utils.SerializeObject(dto)));
                         return;
                     }

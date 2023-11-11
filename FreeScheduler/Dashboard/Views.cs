@@ -9,6 +9,7 @@ namespace FreeScheduler.Dashboard
 <div class=""box"">
 	<div class=""box-header with-border"">
 		<h3 id=""box-title"" class=""box-title""></h3>
+		<span class=""form-group mr15""></span><button class=""btn btn-success pull-right"" onclick=""top.downloadLog()"">下载日志</a>
 	</div>
 	<div class=""box-body"">
 		<div class=""table-responsive"">
@@ -51,6 +52,21 @@ for (var a = 0; a < dto.Logs.length; a++) {
                             </tr>');
 }
 if (sb.length > 0) $('#dto_list').html(sb);
+
+		top.downloadLog = function() {
+			var line = prompt('请输入日志行数...');
+			if (typeof(line) == 'string' && cint(line) > 0) {
+				var dqs = _clone(top.mainViewNav.query);
+				dqs.paxrefersh = new Date().getTime();
+				dqs.download = 1;
+				delete dqs.page;
+				dqs.limit = line;
+				var act = top.mainViewNav.trans('?' + qs_stringify(dqs));
+				window.open(act);
+			} else {
+				alert('标签名输入错误.')
+			}
+		};
 		top.del_callback = function(rt) {
 			if (rt.code == 0) return top.mainViewNav.goto('./?' + new Date().getTime());
 			alert(rt.message);
