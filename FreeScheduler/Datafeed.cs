@@ -173,8 +173,8 @@ namespace FreeScheduler
                             if (scan.Length > 0)
                                 pipe.ZRem("FreeScheduler_zset_log_all", scan.Select(a => a.member).ToArray());
                         var ret = pipe.EndPipe();
-                        affrows += (int)ret[0];
-                        for (var a = 6; a < ret.Length; a++) affrows += (int)ret[a];
+                        affrows += int.Parse(ret[0]?.ToString());
+                        for (var a = 6; a < ret.Length; a++) affrows += int.Parse(ret[a]?.ToString());
                     }
                 }
                 var logs = redis.ZRangeByScore("FreeScheduler_zset_log_all", 0, taskScore);
@@ -182,13 +182,15 @@ namespace FreeScheduler
                 {
                     using (var pipe = redis.StartPipe())
                     {
+                        pipe.ZRemRangeByScore("FreeScheduler_zset_log_all", 0, taskScore);
                         foreach (var log in logs)
                         {
                             var resultMember = redis.Deserialize(log, typeof(TaskLog)) as TaskLog;
                             if (resultMember == null) continue;
                             pipe.ZRem($"FreeScheduler_zset_log:{resultMember.TaskId}", log);
                         }
-                        pipe.EndPipe();
+                        var ret = pipe.EndPipe();
+                        for (var a = 0; a < ret.Length; a++) affrows += int.Parse(ret[a]?.ToString());
                     }
                 }
             }
