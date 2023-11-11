@@ -123,9 +123,9 @@ public class FreeSchedulerBuilder
 
         public override void OnExecuting(Scheduler scheduler, TaskInfo task)
         {
-            if (task.Topic == "[系统预留]清理已完成的任务")
+            if (task.Topic == "[系统预留]清理任务数据")
             {
-                var affrows = Datafeed.CleanCompletedTask(scheduler, (int)uint.Parse(task.Body) + 1);
+                var affrows = Datafeed.CleanStorageData(scheduler, (int)uint.Parse(task.Body) + 1);
                 task.Remark($"已清理 {affrows} 条数据");
             }
             Executing?.Invoke(task);
@@ -138,9 +138,9 @@ public class FreeSchedulerBuilder
 
         public override void OnExecuting(Scheduler scheduler, TaskInfo task)
         {
-            if (task.Topic == "[系统预留]清理已完成的任务")
+            if (task.Topic == "[系统预留]清理任务数据")
             {
-                var affrows = Datafeed.CleanCompletedTask(scheduler, (int)uint.Parse(task.Body) + 1);
+                var affrows = Datafeed.CleanStorageData(scheduler, (int)uint.Parse(task.Body) + 1);
                 task.Remark($"已清理 {affrows} 条数据");
             }
             Executing?.Invoke(task);

@@ -1,6 +1,7 @@
 ﻿using FreeRedis;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace FreeScheduler.TaskHandlers
 {
@@ -46,8 +47,10 @@ namespace FreeScheduler.TaskHandlers
                 pipe.ZRem($"FreeScheduler_zset_{TaskStatus.Running}", task.Id);
                 pipe.ZRem($"FreeScheduler_zset_{TaskStatus.Paused}", task.Id);
                 pipe.ZRem($"FreeScheduler_zset_{TaskStatus.Completed}", task.Id);
-                pipe.Del($"FreeScheduler_zset_log_all");
                 pipe.Del($"FreeScheduler_zset_log:{task.Id}");
+                foreach (var scan in _redis.ZScan($"FreeScheduler_zset_log:{task.Id}", "*", 100))
+                    if (scan.Length > 0)
+                        pipe.ZRem("FreeScheduler_zset_log_all", scan.Select(a => a.member).ToArray());
                 pipe.EndPipe();
             }
         }
@@ -70,8 +73,8 @@ namespace FreeScheduler.TaskHandlers
                     if (status != t.Status)
                         pipe.ZRem($"FreeScheduler_zset_{status}", task.Id);
                     pipe.ZAdd($"FreeScheduler_zset_{t.Status}", taskScore, task.Id);
-                    pipe.ZAdd("FreeScheduler_zset_log_all", resultScore, resultMember);
                     pipe.ZAdd($"FreeScheduler_zset_log:{task.Id}", resultScore, resultMember);
+                    pipe.ZAdd("FreeScheduler_zset_log_all", resultScore, resultMember);
                     pipe.EndPipe();
                 }
             }

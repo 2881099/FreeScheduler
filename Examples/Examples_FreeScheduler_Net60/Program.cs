@@ -34,7 +34,7 @@ Scheduler scheduler = new FreeSchedulerBuilder()
     .Build();
 if (Datafeed.GetPage(scheduler, null, null).Total == 0)
 {
-    scheduler.AddTask("[系统预留]清理已完成的任务", "86400", -1, 3600);
+    scheduler.AddTask("[系统预留]清理任务数据", "86400", -1, 3600);
     scheduler.AddTaskRunOnWeek("（周一）武林大会", "json", -1, "1:12:00:00");
     scheduler.AddTaskRunOnWeek("（周日）亲子活动", "json", -1, "0:00:00:00");
     scheduler.AddTaskRunOnWeek("（周六）社交活动", "json", -1, "6:00:00:00");

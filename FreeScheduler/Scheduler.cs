@@ -242,7 +242,7 @@ namespace FreeScheduler
 			bus = new IdleTimeout(() =>
 			{
 				if (_ib.TryRemove(task.Id) == false && task.InternalFlag == 0) return;
-                var currentRound = task.IncrementCurrentRound();
+				var currentRound = task.IncrementCurrentRound();
 				var round = task.Round;
 				if (task.Status != TaskStatus.Running) return;
 				if (round != -1 && currentRound >= round)
@@ -257,13 +257,13 @@ namespace FreeScheduler
 				if (_clusterContext?.IsOffline() == true) //被其他进程判定离线
 				{
 					if (_tasks.TryRemove(task.Id, out var old))
-                        Interlocked.Decrement(ref _quantityTask);
-                    return;
+						Interlocked.Decrement(ref _quantityTask);
+					return;
 				}
-                _wq.Enqueue(() =>
-                {
-                    Interlocked.Increment(ref _quantityTaskRunning);
-                    try
+				_wq.Enqueue(() =>
+				{
+					Interlocked.Increment(ref _quantityTaskRunning);
+					try
 					{
 						var result = new TaskLog
 						{
@@ -278,7 +278,7 @@ namespace FreeScheduler
 						try
 						{
 							task.RemarkValue = null;
-                            _taskHandler.OnExecuting(this, task);
+							_taskHandler.OnExecuting(this, task);
 						}
 						catch (Exception ex)
 						{
@@ -288,7 +288,11 @@ namespace FreeScheduler
 						}
 						finally
 						{
-							if (string.IsNullOrWhiteSpace(task.RemarkValue) == false) result.Remark += $", {task.RemarkValue}";
+							if (string.IsNullOrWhiteSpace(task.RemarkValue) == false)
+							{
+								if (task.RemarkValue.StartsWith(", ")) task.RemarkValue = task.RemarkValue.Substring(2);
+								result.Remark += string.IsNullOrWhiteSpace(result.Remark) ? task.RemarkValue : $", {task.RemarkValue}";
+							}
 							task.RemarkValue = null;
 							if (status != task.Status) result.Remark = $"{result.Remark}{(string.IsNullOrEmpty(result.Remark) ? "" : ", ")}[Executing] 任务状态 `{status}` 已转为 `{task.Status}`";
 							result.ElapsedMilliseconds = (long)DateTime.UtcNow.Subtract(startdt).TotalMilliseconds;
@@ -303,14 +307,17 @@ namespace FreeScheduler
 							var nextTimeSpan = LocalGetNextTimeSpan(task.Status, currentRound);
 							if (nextTimeSpan != null && _ib.TryRegister(task.Id, () => bus, nextTimeSpan.Value))
 								_ib.Get(task.Id);
-                        }
-                    }
-                    finally
-                    {
-                        Interlocked.Decrement(ref _quantityTaskRunning);
-                    }
-                });
-			});
+						}
+					}
+					finally
+					{
+						Interlocked.Decrement(ref _quantityTaskRunning);
+					}
+				});
+			})
+			{
+
+			};
 			if (_tasks.TryAdd(task.Id, task))
 			{
 				if (isSave)

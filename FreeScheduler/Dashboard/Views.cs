@@ -110,7 +110,7 @@ if (sb.length > 0) $('#dto_list').html(sb);
 <script type=""text/javascript"">
 	(function () {
 var dto = {};
-$('#dto_Description').html(dto.Description.replace(/存储\: (FreeSql|Redis)/, '存储: $1 <a id=""cleanCompletedTask"" href=""./add?tpl=cleanCompletedTask"">数据太多如何清理？</a>'));
+$('#dto_Description').html(dto.Description.replace(/存储\: (FreeSql|Redis)/, '存储: $1 <a href=""./add?tpl=CleanStorageData"">数据太多如何清理？</a>'));
 var fscClusterText = [];
 var fscClusterValue = [];
 for (var a = 0; dto.Clusters != null && a < dto.Clusters.length; a++) {

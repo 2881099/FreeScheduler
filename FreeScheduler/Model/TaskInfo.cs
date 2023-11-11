@@ -65,7 +65,7 @@ namespace FreeScheduler
 
 		internal int InternalFlag { get; set; }
 		internal string RemarkValue { get; set; }
-		public void Remark(string remark) => RemarkValue = remark;
+		public void Remark(string remark) => RemarkValue = $"{RemarkValue}, {remark}";
 
         public TimeSpan? GetInterval(int curRound)
 		{
