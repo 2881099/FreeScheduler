@@ -113,6 +113,9 @@ namespace FreeScheduler
                         var dto = Datafeed.GetPage(scheduler, 
                             req.Query["clusterId"].FirstOrDefault(), 
                             Enum.TryParse(typeof(TaskStatus), req.Query["status"].FirstOrDefault(), out var trystatus) ? (TaskStatus?)trystatus : null,
+                            DateTime.TryParse(req.Query["createtime_1"].FirstOrDefault() ?? "", out var trydt) ? (DateTime?)trydt.AddHours(-8) : null,
+                            DateTime.TryParse(req.Query["createtime_2"].FirstOrDefault() ?? "", out trydt) ? (DateTime?)trydt.AddHours(-8) : null,
+
                             int.TryParse(req.Query["limit"].FirstOrDefault() ?? "20", out var trylimit) ? trylimit : 20,
                             int.TryParse(req.Query["page"].FirstOrDefault() ?? "1", out var trypage) ? trypage : 1);
                         await res.WriteAsync(Views.TaskInfo_list.Replace("var dto = {};", "var dto = " + Utils.SerializeObject(dto)));
@@ -129,7 +132,7 @@ namespace FreeScheduler
                             res.ContentType = "application/x-compress";
                             res.Headers["Content-Disposition"] = $"attachment;filename=log.txt";
                             await res.WriteAsync($"日志总数量：{dto.Total} 本次下载数量：{Math.Min(dto.Total, trylimit)}\r\n");
-                            foreach (var log in dto.Logs) await res.WriteAsync($"[{log.CreateTime.AddHours(8).ToString("yyyy-MM-dd")}] {log.TaskId} 第{log.Round}轮 {(log.Success ? "成功" : "失败")} {log.ElapsedMilliseconds}ms {log.Remark}{(string.IsNullOrWhiteSpace(log.Exception) ? "" : $" 报错：{log.Exception}")}\r\n");
+                            foreach (var log in dto.Logs) await res.WriteAsync($"[{log.CreateTime.AddHours(8).ToString("yyyy-MM-dd HH:mm:ss.fff")}] {log.TaskId} 第{log.Round}轮 {(log.Success ? "成功" : "失败")} {log.ElapsedMilliseconds}ms {log.Remark}{(string.IsNullOrWhiteSpace(log.Exception) ? "" : $" 报错：{log.Exception}")}\r\n");
                             return;
                         }
                         await res.WriteAsync(Views.TaskLog_list.Replace("var dto = {};", "var dto = " + Utils.SerializeObject(dto)));

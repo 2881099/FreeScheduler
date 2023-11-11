@@ -1,12 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace FreeScheduler
 {
     class Snowfake
     {
-        public static Snowfake Default { get; } = new Snowfake(0);
+        public static Snowfake Default { get; internal set; } = new Snowfake(0);
 
         //机器ID
         private static long workerId;

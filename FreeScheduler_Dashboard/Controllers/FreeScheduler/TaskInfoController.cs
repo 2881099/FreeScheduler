@@ -36,7 +36,7 @@ namespace FreeSql.FreeScheduler.Controllers
         [HttpGet]
         async public Task<ActionResult> List([FromQuery] string key, [FromQuery] string clusterId, [FromQuery] TaskStatus? status, [FromQuery] int limit = 20, [FromQuery] int page = 1)
         {
-            var result = Datafeed.GetPage(scheduler, clusterId, status, limit, page);
+            var result = Datafeed.GetPage(scheduler, clusterId, status, null, null, limit, page);
             ViewBag.dto = result;
             return View();
         }

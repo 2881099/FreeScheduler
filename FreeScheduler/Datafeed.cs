@@ -25,7 +25,7 @@ namespace FreeScheduler
                 public int TaskCount { get; set; }
             }
         }
-        public static ResultGetPage GetPage(Scheduler scheduler, string clusterId, TaskStatus? status, int limit = 20, int page = 1)
+        public static ResultGetPage GetPage(Scheduler scheduler, string clusterId, TaskStatus? status, DateTime? betweenTime, DateTime? endTime, int limit = 20, int page = 1)
 		{
             var result = new ResultGetPage();
             result.Timestamp = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
@@ -65,15 +65,18 @@ namespace FreeScheduler
                     if (scheduler._taskHandler is FreeSqlHandler fsqlHandler)
                     {
                         result.Tasks = fsqlHandler._fsql.Select<TaskInfo>()
-                            .WhereIf(status != null, a => a.Status == status)
                             .Where(a => taskIds.Contains(a.Id))
                             .OrderByDescending(a => a.Id)
+                            .ToList()
+                            .Where(a => status == null || a.Status == status)
+                            .Where(a => (betweenTime == null || a.CreateTime > betweenTime) && (endTime == null || a.CreateTime <= endTime))
                             .ToList();
                     }
                     else if (scheduler._taskHandler is FreeRedisHandler redisHandler)
                     {
                         result.Tasks = redisHandler._redis.HMGet<TaskInfo>("FreeScheduler_hset", taskIds)
                             .Where(a => status == null || a.Status == status)
+                            .Where(a => (betweenTime == null || a.CreateTime > betweenTime) && (endTime == null || a.CreateTime <= endTime))
                             .ToList();
                     }
                 }
@@ -87,6 +90,8 @@ namespace FreeScheduler
                 {
                     result.Tasks = fsqlHandler._fsql.Select<TaskInfo>()
                         .WhereIf(status != null, a => a.Status == status)
+                        .WhereIf(betweenTime != null, a => a.CreateTime > betweenTime)
+                        .WhereIf(endTime != null, a => a.CreateTime <= endTime)
                         .Count(out var total)
                         .Page(page, limit)
                         .OrderByDescending(a => a.Id)
@@ -96,19 +101,24 @@ namespace FreeScheduler
                 else if (scheduler._taskHandler is FreeRedisHandler redisHandler)
                 {
                     var zkey = status == null ? "FreeScheduler_zset_all" : $"FreeScheduler_zset_{status}";
-                    var taskIds = redisHandler._redis.ZRevRangeByScore(zkey, "+inf", "-inf", Math.Max(0, page - 1) * limit, limit);
+                    var max = endTime == null ? "+inf" : string.Concat(Math.Max(0, (int)endTime.Value.Subtract(_2020).TotalSeconds));
+                    var min = betweenTime == null ? "-inf" : string.Concat(Math.Max(0, (int)betweenTime.Value.Subtract(_2020).TotalSeconds));
+                    var taskIds = redisHandler._redis.ZRevRangeByScore(zkey, max, min, Math.Max(0, page - 1) * limit, limit);
                     result.Tasks = taskIds.Any() ? redisHandler._redis.HMGet<TaskInfo>("FreeScheduler_hset", taskIds).ToList() : new List<TaskInfo>();
                     result.Total = (int)redisHandler._redis.ZCard(zkey);
                 }
                 else if (scheduler._taskHandler is TestHandler testHandler)
                 {
-                    var queryTasks = testHandler._memoryTasks.Values.Where(a => status == null || a.Status == status.Value);
+                    var queryTasks = testHandler._memoryTasks.Values
+                        .Where(a => status == null || a.Status == status.Value)
+                        .Where(a => (betweenTime == null || a.CreateTime > betweenTime) && (endTime == null || a.CreateTime <= endTime));
                     result.Total = queryTasks.Count();
                     result.Tasks = queryTasks.OrderByDescending(a => a.Id).Skip(Math.Max(0, page - 1) * limit).Take(limit).ToList();
                 }
             }
             return result;
         }
+        static readonly DateTime _2020 = new DateTime(2020, 1, 1);
         public static string AddTask(Scheduler scheduler, string topic, string body, int round, TaskInterval interval, string argument)
         {
             string taskId = null;

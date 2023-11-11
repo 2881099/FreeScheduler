@@ -9,7 +9,7 @@ namespace FreeScheduler.Dashboard
 <div class=""box"">
 	<div class=""box-header with-border"">
 		<h3 id=""box-title"" class=""box-title""></h3>
-		<span class=""form-group mr15""></span><button class=""btn btn-success pull-right"" onclick=""top.downloadLog()"">下载日志</a>
+		<span class=""form-group mr15""></span><button class=""btn btn-success pull-right"" onclick=""top.downloadLog()"">下载日志</button>
 	</div>
 	<div class=""box-body"">
 		<div class=""table-responsive"">
@@ -99,6 +99,16 @@ if (sb.length > 0) $('#dto_list').html(sb);
 			<form id=""form_search"">
 				<div id=""div_filter""></div>
 			</form>
+			<div style=""line-height:36px;border-bottom:1px solid #ddd;word-wrap:break-word;word-break:break-all;width:45%;float:left;"">
+				<div style=""float:left;width:70px;"">创建时间</div>
+				<div style=""float:left;width:80%"">
+					<input id=createtime_1 type=""text"" value=""2020-01-01"" style=""font-size:16px;padding:0;margin:0;height:32px"" />
+					至
+					<input id=createtime_2 type=""text"" value=""2023-11-11"" style=""font-size:16px;padding:0;margin:0;height:32px"" />
+					<button class=""btn btn-info"" onclick=""top.searchByCreateTime()"">搜索</button>
+				</div>
+				<div style=""clear:both;""></div>
+			</div>
 			<form id=""form_list"" action=""./del"" method=""post"">
 				<input type=""hidden"" name=""__callback"" value=""del_callback""/>
 				<table id=""GridView1"" cellspacing=""0"" rules=""all"" border=""1"" style=""border-collapse:collapse;"" class=""table table-bordered table-hover text-nowrap"">
@@ -184,7 +194,15 @@ if (sb.length > 0) $('#dto_list').html(sb);
 					setTimeout(top.mainViewNav.reload, 1000);
 				},
 			});
-		}
+		};
+		top.searchByCreateTime = function() {
+			var qs = _clone(top.mainViewNav.query);
+			delete qs.page;
+			qs.createtime_1 = $('#createtime_1').val();
+			qs.createtime_2 = $('#createtime_2').val();
+			console.log(qs)
+			top.mainViewNav.goto('?' + qs_stringify(qs));
+		};
 
 		top.del_callback = function(rt) {
 			if (rt.code == 0) return top.mainViewNav.goto('./?' + new Date().getTime());
@@ -192,6 +210,9 @@ if (sb.length > 0) $('#dto_list').html(sb);
 		};
 
 		var qs = _clone(top.mainViewNav.query);
+		var date = (new Date().getYear() + 1900) + '-' + (new Date().getMonth() + 1) + '-' + new Date().getDate();
+		if (qs.createtime_1) $('#createtime_1').val(qs.createtime_1);
+		$('#createtime_2').val(qs.createtime_2 || date);
 		var page = cint(qs.page, 1);
 		delete qs.page;
 		$('#kkpager').html(cms2Pager(dto.Total, page, 20, qs, 'page'));
