@@ -203,6 +203,16 @@ namespace FreeScheduler
                     }
                 }
             }
+            if (scheduler._clusterContext != null)
+            {
+                var redis = scheduler._clusterContext._redis;
+                var timestamp = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
+                foreach (var scan in redis.HScan($"{scheduler.ClusterOptions.RedisPrefix}_offline", "*", 100))
+                {
+                    var fields = scan.Where(a => int.TryParse(a.Value ?? "", out var tryint) && timestamp - tryint > 86400).Select(a => a.Key).ToArray();
+                    if (fields.Any()) redis.HDel($"{scheduler.ClusterOptions.RedisPrefix}_offline", fields);
+                }
+            }
             return affrows;
         }
 

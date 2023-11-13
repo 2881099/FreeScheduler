@@ -519,6 +519,7 @@ namespace FreeScheduler
 				var status = task.Status;
 				try
 				{
+					task.RemarkValue = null;
 					_taskHandler.OnExecuting(this, task);
 				}
 				catch (Exception ex)
@@ -529,7 +530,13 @@ namespace FreeScheduler
 				}
 				finally
 				{
-					if (status != task.Status) result.Remark = $"{result.Remark}{(string.IsNullOrEmpty(result.Remark) ? "" : ", ")}[Executing] 任务状态 `{status}` 已转为 `{task.Status}`";
+                    if (string.IsNullOrWhiteSpace(task.RemarkValue) == false)
+                    {
+                        if (task.RemarkValue.StartsWith(", ")) task.RemarkValue = task.RemarkValue.Substring(2);
+                        result.Remark += string.IsNullOrWhiteSpace(result.Remark) ? task.RemarkValue : $", {task.RemarkValue}";
+                    }
+                    task.RemarkValue = null;
+                    if (status != task.Status) result.Remark = $"{result.Remark}{(string.IsNullOrEmpty(result.Remark) ? "" : ", ")}[Executing] 任务状态 `{status}` 已转为 `{task.Status}`";
 					result.ElapsedMilliseconds = (long)DateTime.UtcNow.Subtract(startdt).TotalMilliseconds;
 					task.LastRunTime = DateTime.UtcNow;
 					_taskHandler.OnExecuted(this, task, result);
