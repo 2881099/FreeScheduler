@@ -5,7 +5,84 @@ namespace FreeScheduler.Dashboard
 	//private set 预留给外部设置
     public static class Views
     {
-		public static string TaskLog_list { get; private set; } = @"
+		public static string ClusterLog_list { get; private set; } = @"
+<div class=""box"">
+	<div class=""box-header with-border"">
+		<h3 id=""box-title"" class=""box-title""></h3>
+		<span class=""form-group mr15""></span><button class=""btn btn-success pull-right"" onclick=""top.downloadLog()"">下载日志</button>
+	</div>
+	<div class=""box-body"">
+		<div class=""table-responsive"">
+			<form id=""form_list"" action=""./del"" method=""post"">
+				<input type=""hidden"" name=""__callback"" value=""del_callback""/>
+				<table id=""GridView1"" cellspacing=""0"" rules=""all"" border=""1"" style=""border-collapse:collapse;"" class=""table table-bordered table-hover text-nowrap"">
+					<tr>
+						<th scope=""col"">时间</th>
+						<th scope=""col"">集群Id</th>
+						<th scope=""col"">集群名称</th>
+						<th scope=""col"">内容</th>
+					</tr>
+					<tbody id=dto_list>
+					</tbody>
+				</table>
+			</form>
+			<div id=""kkpager""></div>
+		</div>
+	</div>
+</div>
+
+<script type=""text/javascript"">
+	(function () {
+var dto = {};
+var sb = [];
+for (var a = 0; a < dto.Logs.length; a++) {
+	var log = dto.Logs[a];
+	for(var b in log) if(log[b]==null)log[b]='';
+	sb.push('<tr>\
+								<td>' + new Date(log.CreateTime*1000).toLocaleString() + '</td>\
+								<td>' + log.ClusterId + '</td>\
+								<td>' + log.ClusterName + '</td>\
+								<td>' + log.Message + '</td>\
+                            </tr>');
+}
+if (sb.length > 0) $('#dto_list').html(sb);
+
+		top.downloadLog = function() {
+			var line = prompt('请输入日志行数...');
+			if (typeof(line) == 'string' && cint(line) > 0) {
+				var dqs = _clone(top.mainViewNav.query);
+				dqs.paxrefersh = new Date().getTime();
+				dqs.download = 1;
+				delete dqs.page;
+				dqs.limit = line;
+				var act = top.mainViewNav.trans('?' + qs_stringify(dqs));
+				window.open(act);
+			} else {
+				alert('标签名输入错误.')
+			}
+		};
+		top.del_callback = function(rt) {
+			if (rt.code == 0) return top.mainViewNav.goto('./?' + new Date().getTime());
+			alert(rt.message);
+		};
+
+		var qs = _clone(top.mainViewNav.query);
+		var page = cint(qs.page, 1);
+		delete qs.page;
+		$('#kkpager').html(cms2Pager(dto.Total, page, 20, qs, 'page'));
+		var fqs = _clone(top.mainViewNav.query);
+		delete fqs.page;
+		var fsc = [
+			null
+		];
+		fsc.pop();
+		cms2Filter(fsc, fqs);
+		top.mainViewInit();
+	})();
+</script>
+";
+
+        public static string TaskLog_list { get; private set; } = @"
 <div class=""box"">
 	<div class=""box-header with-border"">
 		<h3 id=""box-title"" class=""box-title""></h3>
@@ -48,7 +125,7 @@ for (var a = 0; a < dto.Logs.length; a++) {
 								<td class=""text-center"">' + (log.Success ? '<font color=green>是</font>' : '<font color=red>否</font>') + '</td>\
 								<td>' + log.Exception + '</td>\
 								<td>' + log.Remark + '</td>\
-								<td>' + new Date(log.CreateTime).toLocaleString() + '</td>\
+								<td>' + new Date(log.CreateTime*1000).toLocaleString() + '</td>\
                             </tr>');
 }
 if (sb.length > 0) $('#dto_list').html(sb);
@@ -99,7 +176,7 @@ if (sb.length > 0) $('#dto_list').html(sb);
 			<form id=""form_search"">
 				<div id=""div_filter""></div>
 			</form>
-			<div style=""line-height:36px;border-bottom:1px solid #ddd;word-wrap:break-word;word-break:break-all;width:45%;float:left;"">
+			<div style=""line-height:36px;border-bottom:1px solid #ddd;word-wrap:break-word;word-break:break-all;"">
 				<div style=""float:left;width:70px;"">创建时间</div>
 				<div style=""float:left;width:80%"">
 					<input id=createtime_1 type=""text"" value=""2020-01-01"" style=""font-size:16px;padding:0;margin:0;height:32px"" />
@@ -173,10 +250,10 @@ for (var a = 0; a < dto.Tasks.length; a++) {
 })() + '</td>\
 								<td>' + task.Status + '</td>\
 								<td>' + task.Body + '</td>\
-								<td>' + new Date(task.CreateTime).toLocaleString() + '</td>\
+								<td>' + new Date(task.CreateTime*1000).toLocaleString() + '</td>\
 								<td>' + (function() {
-	if (dto.Description.indexOf('存储: Memory') == -1) return '<a href=""../TaskLog/?taskId=' + task.Id + '"">' + new Date(task.LastRunTime).toLocaleString() + '</a>';
-	return new Date(task.LastRunTime).toLocaleString();
+	if (dto.Description.indexOf('存储: Memory') == -1) return '<a href=""../TaskLog/?taskId=' + task.Id + '"">' + new Date(task.LastRunTime*1000).toLocaleString() + '</a>';
+	return new Date(task.LastRunTime*1000).toLocaleString();
 })() + '</td>\
 								<td>' + task.ErrorTimes + '</td>\
                             </tr>');

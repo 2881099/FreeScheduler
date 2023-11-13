@@ -3,7 +3,6 @@ using FreeScheduler.TaskHandlers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace FreeScheduler
 {
@@ -236,6 +235,41 @@ namespace FreeScheduler
             {
                 throw new Exception($"{nameof(TestHandler)} 未实现 {nameof(TaskLog)} 日志记录");
             }
+            return result;
+        }
+
+        public class ResultGetClusterLogs
+        {
+            public int Total { get; set; }
+            public List<ClusterLog> Logs { get; set; }
+        }
+        public class ClusterLog
+        {
+            public DateTime CreateTime { get; set; }
+            public string ClusterId { get; set; }
+            public string ClusterName { get; set; }
+            public string Message { get; set; }
+        }
+        public static ResultGetClusterLogs GetClusterLogs(Scheduler scheduler, int limit = 20, int page = 1)
+        {
+            var result = new ResultGetClusterLogs();
+            if (scheduler._clusterContext == null)
+                throw new Exception("未开启集群，无法使用该操作");
+
+            var redis = scheduler._clusterContext._redis;
+            var logkey = $"{scheduler.ClusterOptions.RedisPrefix}_log";
+            result.Total = (int)redis.LLen(logkey);
+            result.Logs = redis.LRange(logkey, Math.Max(0, page - 1) * limit, Math.Max(0, page) * limit).Select(a =>
+            {
+                var cols = a.Split(new[] { "|" }, 4, StringSplitOptions.None);
+                return new ClusterLog
+                {
+                    CreateTime = new DateTime(1970, 1, 1).AddSeconds(int.TryParse(cols[0], out var tryint) ? tryint : 0),
+                    ClusterId = cols[1],
+                    ClusterName = cols[2],
+                    Message = cols[3],
+                };
+            }).ToList();
             return result;
         }
     }

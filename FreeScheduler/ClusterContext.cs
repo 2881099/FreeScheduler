@@ -46,6 +46,13 @@ namespace FreeScheduler
                 if (!string.IsNullOrWhiteSpace(options.RedisPrefix)) Options.RedisPrefix = options.RedisPrefix;
             }
         }
+
+        void Logger(string msg)
+        {
+            var timestamp = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
+            _redis.Eval("redis.call('lpush',KEYS[1],ARGV[1]); if(redis.call('llen',KEYS[1])>1000)then redis.call('rpop',KEYS[1]) end return 1", 
+                new[] { $"{Options.RedisPrefix}_log" }, $"{timestamp}|{ClusterId}|{Options.Name}|{msg}");
+        }
         internal void Init(Scheduler scheduler)
         {
             _scheduler = scheduler;
@@ -59,6 +66,7 @@ namespace FreeScheduler
                     Thread.CurrentThread.Join(1000);
                     return;
                 }
+                Logger($"alloc: {msg}");
                 var args = msg.Split('|');
                 var timestamp = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
                 int.TryParse(args[0], out var time);
@@ -85,6 +93,7 @@ namespace FreeScheduler
         {
             var msg = data as string;
             if (string.IsNullOrWhiteSpace(msg)) return;
+            Logger($"remote call: {msg}");
             var args = msg.Split('|');
             var timestamp = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
             int.TryParse(args[0], out var time);
@@ -186,6 +195,7 @@ namespace FreeScheduler
                 timeoutResult = _redis.Eval($@"if(redis.call('hexists',KEYS[1],ARGV[2])==1)then return '-1' end
 redis.call('zadd',KEYS[2],ARGV[1],ARGV[2]){(string.IsNullOrWhiteSpace(Options.Name) ? "" : $" redis.call('hset',KEYS[3],ARGV[2],ARGV[3])")}
 local a=redis.call('zrangebyscore',KEYS[2],0,ARGV[1]-{Options.OfflineSeconds},'limit',0,1)
+if(a and a[1]==ARGV[2])then return nil end
 if(a and a[1])then if(redis.call('hsetnx',KEYS[1],a[1],ARGV[1])==1)then return {{a[1],1}} end
 if(ARGV[1]-tonumber(redis.call('hget',KEYS[1],a[1]))>120)then redis.call('zrem',KEYS[2],a[1]) end end return nil", 
                 new[] { $"{Options.RedisPrefix}_offline", $"{Options.RedisPrefix}", $"{Options.RedisPrefix}_name" }, 
@@ -198,13 +208,16 @@ if(ARGV[1]-tonumber(redis.call('hget',KEYS[1],a[1]))>120)then redis.call('zrem',
             if (timeoutResult == null) return;
             if (timeoutResult as string == "-1") //被其他进程判定离线
             {
+                Logger($"被其他进程判定离线");
                 _scheduler.CancelAllTask();
                 var offlinets = timestamp - _redis.HGet<int>($"{Options.RedisPrefix}_offline", ClusterId);
                 if (offlinets > 60 * 5 || offlinets > 5 && _scheduler._quantityTaskRunning <= 0)
                 {
+                    var oldClusterId = ClusterId;
                     _redis.UnSubscribe($"{Options.RedisPrefix}_{ClusterId}");
                     ClusterId = Guid.NewGuid().ToString("n") + "_renew"; //离线超过5分钟，取消本进程任务，重新生成 ClusterId
                     _redis.Subscribe($"{Options.RedisPrefix}_{ClusterId}", SubscribeClusterId);
+                    Logger($"重置 ClusterId {oldClusterId} -> {ClusterId}");
                 }
                 return;
             }
@@ -218,6 +231,7 @@ if(ARGV[1]-tonumber(redis.call('hget',KEYS[1],a[1]))>120)then redis.call('zrem',
                 pipe.HDel($"{Options.RedisPrefix}_name", timeoutClusterId);
                 pipe.EndPipe();
             }
+            Logger($"{timeoutClusterId} 离线被清理");
             ReloadTask(timeoutClusterId);
         }
         void ReloadTask(string tempClusterId)
@@ -236,7 +250,10 @@ if(ARGV[1]-tonumber(redis.call('hget',KEYS[1],a[1]))>120)then redis.call('zrem',
                         .Where(taskId => _scheduler._tasks.ContainsKey(taskId) == false)
                         .Select(taskId => $"{timestamp}|{nameof(ReloadTask)}|{taskId}").ToArray();
                     if (taskIds.Any())
+                    {
                         _redis.LPush($"{Options.RedisPrefix}_alloc", taskIds);
+                        Logger($"{tempClusterId} 离线有 {taskIds.Length} 个任务被分配");
+                    }
                     break; //数量较多时，延迟处理
                 }
                 if (_redis.ZCard(regkey) > 0)
@@ -250,8 +267,15 @@ if(ARGV[1]-tonumber(redis.call('hget',KEYS[1],a[1]))>120)then redis.call('zrem',
 
         public bool IsOffline()
         {
-            var offline = _redis.HExists($"{Options.RedisPrefix}_offline", ClusterId);
-            return offline;
+            try
+            {
+                var offline = _redis.HExists($"{Options.RedisPrefix}_offline", ClusterId);
+                return offline;
+            }
+            catch
+            {
+                return false;
+            }
         }
         public bool Register(string id, string targetKey)
         {

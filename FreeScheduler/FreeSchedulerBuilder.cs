@@ -98,7 +98,7 @@ public class FreeSchedulerBuilder
         var scheduler = new Scheduler(taskHandler, _customIntervalHandler, _clusterRedis != null ? new ClusterContext(_clusterRedis, _clusterOptions) : null);
         scheduler.ScanInterval = _scanInterval;
         if (_clusterRedis != null)
-            Snowfake.Default = new Snowfake(_clusterRedis.Incr($"{scheduler.ClusterOptions.RedisPrefix}_Snowfake"));
+            Snowfake.Default = new Snowfake(_clusterRedis.Incr($"{scheduler.ClusterOptions.RedisPrefix}_Snowfake") % 16);
 
         return scheduler;
     }

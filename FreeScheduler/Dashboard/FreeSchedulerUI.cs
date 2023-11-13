@@ -52,7 +52,8 @@ namespace FreeScheduler
                         //首页
                         await res.WriteAsync(Views.Home.Replace(@"<ul class=""treeview-menu""></ul>", $@"<ul class=""treeview-menu"">
 							<li><a href=""{requestPathBase}TaskInfo/""><i class=""fa fa-sort-amount-desc""></i>任务列表</a></li>
-							<li><a href=""{requestPathBase}TaskLog/""><i class=""fa fa-headphones""></i>输出日志</a></li>
+							<li><a href=""{requestPathBase}TaskLog/""><i class=""fa fa-headphones""></i>任务日志</a></li>
+                            {(scheduler.ClusterId == null ? "" : $"<li><a href=\"{requestPathBase}ClusterLog/\"><i class=\"fa fa-wifi\"></i>集群日志</a></li>")}
 						</ul>"));
                         return;
                     }
@@ -136,6 +137,22 @@ namespace FreeScheduler
                             return;
                         }
                         await res.WriteAsync(Views.TaskLog_list.Replace("var dto = {};", "var dto = " + Utils.SerializeObject(dto)));
+                        return;
+                    }
+                    if (reqPath.StartsWith($"{requestPathBase}clusterlog"))
+                    {
+                        var dto = Datafeed.GetClusterLogs(scheduler,
+                            int.TryParse(req.Query["limit"].FirstOrDefault() ?? "20", out var trylimit) ? trylimit : 20,
+                            int.TryParse(req.Query["page"].FirstOrDefault() ?? "1", out var trypage) ? trypage : 1);
+                        if (req.Query["download"] == "1")
+                        {
+                            res.ContentType = "application/x-compress";
+                            res.Headers["Content-Disposition"] = $"attachment;filename=log.txt";
+                            await res.WriteAsync($"日志总数量：{dto.Total} 本次下载数量：{Math.Min(dto.Total, trylimit)}\r\n");
+                            foreach (var log in dto.Logs) await res.WriteAsync($"[{log.CreateTime.AddHours(8).ToString("yyyy-MM-dd HH:mm:ss.fff")}] {log.ClusterId} {log.ClusterName} {log.Message}\r\n");
+                            return;
+                        }
+                        await res.WriteAsync(Views.ClusterLog_list.Replace("var dto = {};", "var dto = " + Utils.SerializeObject(dto)));
                         return;
                     }
                 }

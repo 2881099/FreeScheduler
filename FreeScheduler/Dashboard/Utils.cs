@@ -2,6 +2,8 @@
 using FreeSql.Internal.Model;
 using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using System;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
@@ -40,8 +42,40 @@ namespace FreeScheduler.Dashboard
 		static Utils()
 		{
             JsonSerializerSettings = new JsonSerializerSettings();
-			JsonSerializerSettings.Converters.Add(new Newtonsoft.Json.Converters.StringEnumConverter());
+			JsonSerializerSettings.Converters.Add(new StringEnumConverter());
+			JsonSerializerSettings.Converters.Add(new DateTimeConverter());
         }
+		class DateTimeConverter : DateTimeConverterBase
+        {
+            public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+            {
+                if (reader.TokenType != JsonToken.Integer)
+                    throw new Exception($"Unexpected token parsing date. Expected Integer, got {reader.TokenType}.");
+
+                var ticks = (long)reader.Value;
+
+                var date = new DateTime(1970, 1, 1);
+                date = date.AddSeconds(ticks);
+
+                return date;
+            }
+
+            public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+			{
+                long ticks;
+                if (value is DateTime || value is DateTime?)
+                {
+                    var epoc = new DateTime(1970, 1, 1);
+                    var delta = ((DateTime)value) - epoc;
+                    if (delta.TotalSeconds < 0)
+                        throw new ArgumentOutOfRangeException("Unix epoc starts January 1st, 1970");
+                    ticks = (long)delta.TotalSeconds;
+                }
+                else
+                    throw new Exception("Expected date object value.");
+                writer.WriteValue(ticks);
+            }
+		}
 
 		public static JsonSerializerSettings JsonSerializerSettings { get; private set; }
 		public static string SerializeObject(object options) => JsonConvert.SerializeObject(options, JsonSerializerSettings);
