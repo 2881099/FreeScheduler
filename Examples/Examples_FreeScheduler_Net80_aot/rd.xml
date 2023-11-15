@@ -1,0 +1,10 @@
+﻿<Directives>
+	<Application>
+		<Assembly Name="FreeScheduler"  Dynamic="Required All">
+		</Assembly>
+		<!--<Assembly Name="FreeRedis"  Dynamic="Required All">
+		</Assembly>-->
+		<Assembly Name="FreeSql"  Dynamic="Required All">
+		</Assembly>
+	</Application>
+</Directives>

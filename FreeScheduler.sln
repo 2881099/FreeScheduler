@@ -22,6 +22,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FreeScheduler_Dashboard", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Examples_FreeScheduler_Net80", "Examples\Examples_FreeScheduler_Net80\Examples_FreeScheduler_Net80.csproj", "{5085A933-63C5-4401-B793-69021017C3B1}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Examples_FreeScheduler_Net80_aot", "Examples\Examples_FreeScheduler_Net80_aot\Examples_FreeScheduler_Net80_aot.csproj", "{A8A67720-B505-4D2F-81EA-008C30794D63}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -52,6 +54,10 @@ Global
 		{5085A933-63C5-4401-B793-69021017C3B1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5085A933-63C5-4401-B793-69021017C3B1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5085A933-63C5-4401-B793-69021017C3B1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A8A67720-B505-4D2F-81EA-008C30794D63}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A8A67720-B505-4D2F-81EA-008C30794D63}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A8A67720-B505-4D2F-81EA-008C30794D63}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A8A67720-B505-4D2F-81EA-008C30794D63}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -61,6 +67,7 @@ Global
 		{478DC24E-40D8-484A-902C-94A6A9A22E4A} = {0832562A-80F3-4513-AC2F-4B4DFBB04F57}
 		{10CF7100-3DB2-49E9-B080-8CF7E8B89F6A} = {0832562A-80F3-4513-AC2F-4B4DFBB04F57}
 		{5085A933-63C5-4401-B793-69021017C3B1} = {0832562A-80F3-4513-AC2F-4B4DFBB04F57}
+		{A8A67720-B505-4D2F-81EA-008C30794D63} = {0832562A-80F3-4513-AC2F-4B4DFBB04F57}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {23CB00AF-59EE-4479-A279-0A3AECA31FF5}
