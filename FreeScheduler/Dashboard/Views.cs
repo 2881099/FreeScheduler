@@ -177,18 +177,30 @@ if (sb.length > 0) $('#dto_list').html(sb);
 				<div id=""div_filter""></div>
 			</form>
 			<div style=""line-height:36px;border-bottom:1px solid #ddd;word-wrap:break-word;word-break:break-all;"">
+				<div style=""float:left;width:70px;"">标题</div>
+				<div style=""float:left;width:80%"">
+					<input id=topic_1 type=""text"" placeholder=""按【标题】搜索""
+						onkeyup=""if(event.keyCode==13)top.searchByTopic();"" 
+						style=""font-size:16px;padding:0 9px 0 9px;margin:0;height:32px"" />
+				</div>
+				<div style=""clear:both;""></div>
+			</div>
+			<div style=""line-height:36px;border-bottom:1px solid #ddd;word-wrap:break-word;word-break:break-all;"">
 				<div style=""float:left;width:70px;"">创建时间</div>
 				<div style=""float:left;width:80%"">
-					<input id=createtime_1 type=""text"" value=""2020-01-01"" style=""font-size:16px;padding:0;margin:0;height:32px"" />
+					<input id=createtime_1 type=""text"" value=""2020-01-01"" 
+						onkeyup=""if(event.keyCode==13)top.searchByCreateTime();"" 
+						style=""font-size:16px;padding:0 9px 0 9px;margin:0;height:32px"" />
 					至
-					<input id=createtime_2 type=""text"" value=""2023-11-11"" style=""font-size:16px;padding:0;margin:0;height:32px"" />
-					<button class=""btn btn-info"" onclick=""top.searchByCreateTime()"">搜索</button>
+					<input id=createtime_2 type=""text"" value=""2023-11-11""
+						onkeyup=""if(event.keyCode==13)top.searchByCreateTime();"" 
+						style=""font-size:16px;padding:0 9px 0 9px;margin:0;height:32px"" />
 				</div>
 				<div style=""clear:both;""></div>
 			</div>
 			<form id=""form_list"" action=""./del"" method=""post"">
 				<input type=""hidden"" name=""__callback"" value=""del_callback""/>
-				<table id=""GridView1"" cellspacing=""0"" rules=""all"" border=""1"" style=""border-collapse:collapse;"" class=""table table-bordered table-hover text-nowrap"">
+				<table id=""GridView1"" cellspacing=""0"" rules=""all"" border=""1"" style=""border-collapse:collapse;"" class=""table table-bordered table-hover"">
 					<tr>
 						<th scope=""col"">操作</th>
 						<th scope=""col"">编号</th>
@@ -272,6 +284,13 @@ if (sb.length > 0) $('#dto_list').html(sb);
 				},
 			});
 		};
+		top.searchByTopic = function() {
+			var qs = _clone(top.mainViewNav.query);
+			delete qs.page;
+			qs.topic = $('#topic_1').val();
+			console.log(qs)
+			top.mainViewNav.goto('?' + qs_stringify(qs));
+		};
 		top.searchByCreateTime = function() {
 			var qs = _clone(top.mainViewNav.query);
 			delete qs.page;
@@ -287,6 +306,7 @@ if (sb.length > 0) $('#dto_list').html(sb);
 		};
 
 		var qs = _clone(top.mainViewNav.query);
+		$('#topic_1').val((qs.topic || '').trim());
 		var date = (new Date().getYear() + 1900) + '-' + (new Date().getMonth() + 1) + '-' + new Date().getDate();
 		if (qs.createtime_1) $('#createtime_1').val(qs.createtime_1);
 		$('#createtime_2').val(qs.createtime_2 || date);

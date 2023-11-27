@@ -112,8 +112,9 @@ namespace FreeScheduler
                     if (reqPath.StartsWith($"{requestPathBase}taskinfo"))
                     {
                         var dto = Datafeed.GetPage(scheduler, 
-                            req.Query["clusterId"].FirstOrDefault(), 
-                            Enum.TryParse(typeof(TaskStatus), req.Query["status"].FirstOrDefault(), out var trystatus) ? (TaskStatus?)trystatus : null,
+                            req.Query["clusterId"].FirstOrDefault(),
+							req.Query["topic"].FirstOrDefault(),
+							Enum.TryParse(typeof(TaskStatus), req.Query["status"].FirstOrDefault(), out var trystatus) ? (TaskStatus?)trystatus : null,
                             DateTime.TryParse(req.Query["createtime_1"].FirstOrDefault() ?? "", out var trydt) ? (DateTime?)trydt.AddHours(-8) : null,
                             DateTime.TryParse(req.Query["createtime_2"].FirstOrDefault() ?? "", out trydt) ? (DateTime?)trydt.AddHours(-8) : null,
 

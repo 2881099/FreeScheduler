@@ -35,7 +35,9 @@ namespace FreeScheduler.TaskHandlers
                 pipe.HSet("FreeScheduler_hset", task.Id, task);
                 pipe.ZAdd($"FreeScheduler_zset_all", taskScore, task.Id);
                 pipe.ZAdd($"FreeScheduler_zset_{task.Status}", taskScore, task.Id);
-                pipe.EndPipe();
+				pipe.ZAdd($"FreeScheduler_zset_{task.Topic}_all", taskScore, task.Id);
+				pipe.ZAdd($"FreeScheduler_zset_{task.Topic}_{task.Status}", taskScore, task.Id);
+				pipe.EndPipe();
             }
         }
         public void OnRemove(TaskInfo task)
@@ -43,11 +45,18 @@ namespace FreeScheduler.TaskHandlers
             using (var pipe = _redis.StartPipe())
             {
                 pipe.HDel("FreeScheduler_hset", task.Id);
+
                 pipe.ZRem($"FreeScheduler_zset_all", task.Id);
                 pipe.ZRem($"FreeScheduler_zset_{TaskStatus.Running}", task.Id);
                 pipe.ZRem($"FreeScheduler_zset_{TaskStatus.Paused}", task.Id);
                 pipe.ZRem($"FreeScheduler_zset_{TaskStatus.Completed}", task.Id);
-                pipe.Del($"FreeScheduler_zset_log:{task.Id}");
+
+				pipe.ZRem($"FreeScheduler_zset_{task.Topic}_all", task.Id);
+				pipe.ZRem($"FreeScheduler_zset_{task.Topic}_{TaskStatus.Running}", task.Id);
+				pipe.ZRem($"FreeScheduler_zset_{task.Topic}_{TaskStatus.Paused}", task.Id);
+				pipe.ZRem($"FreeScheduler_zset_{task.Topic}_{TaskStatus.Completed}", task.Id);
+
+				pipe.Del($"FreeScheduler_zset_log:{task.Id}");
                 foreach (var scan in _redis.ZScan($"FreeScheduler_zset_log:{task.Id}", "*", 100))
                     if (scan.Length > 0)
                         pipe.ZRem("FreeScheduler_zset_log_all", scan.Select(a => a.member).ToArray());
@@ -71,9 +80,14 @@ namespace FreeScheduler.TaskHandlers
                 {
                     pipe.HSet("FreeScheduler_hset", task.Id, task);
                     if (status != t.Status)
+                    {
                         pipe.ZRem($"FreeScheduler_zset_{status}", task.Id);
+						pipe.ZRem($"FreeScheduler_zset_{task.Topic}_{status}", task.Id);
+					}
                     pipe.ZAdd($"FreeScheduler_zset_{t.Status}", taskScore, task.Id);
-                    pipe.ZAdd($"FreeScheduler_zset_log:{task.Id}", resultScore, resultMember);
+					pipe.ZAdd($"FreeScheduler_zset_{task.Topic}_{t.Status}", taskScore, task.Id);
+
+					pipe.ZAdd($"FreeScheduler_zset_log:{task.Id}", resultScore, resultMember);
                     pipe.ZAdd("FreeScheduler_zset_log_all", resultScore, resultMember);
                     pipe.EndPipe();
                 }

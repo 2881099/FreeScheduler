@@ -24,9 +24,10 @@ namespace FreeScheduler
                 public int TaskCount { get; set; }
             }
         }
-        public static ResultGetPage GetPage(Scheduler scheduler, string clusterId, TaskStatus? status, DateTime? betweenTime, DateTime? endTime, int limit = 20, int page = 1)
+        public static ResultGetPage GetPage(Scheduler scheduler, string clusterId = null, string topic = null, TaskStatus? status = null, DateTime? betweenTime = null, DateTime? endTime = null, int limit = 20, int page = 1)
 		{
-            var result = new ResultGetPage();
+            topic = topic?.Trim();
+			var result = new ResultGetPage();
             result.Timestamp = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
             result.Description = $"集群: {(scheduler.ClusterId == null ? "否" : $"是, 名称: {(string.IsNullOrWhiteSpace(scheduler.ClusterOptions.Name) ? scheduler.ClusterId : scheduler.ClusterOptions.Name)}")}";
             if (scheduler._taskHandler is FreeSqlHandler) result.Description += $", 存储: FreeSql";
@@ -67,14 +68,16 @@ namespace FreeScheduler
                             .Where(a => taskIds.Contains(a.Id))
                             .OrderByDescending(a => a.Id)
                             .ToList()
-                            .Where(a => status == null || a.Status == status)
+						    .Where(a => string.IsNullOrWhiteSpace(topic) == false || a.Topic == topic)
+							.Where(a => status == null || a.Status == status)
                             .Where(a => (betweenTime == null || a.CreateTime > betweenTime) && (endTime == null || a.CreateTime <= endTime))
                             .ToList();
                     }
                     else if (scheduler._taskHandler is FreeRedisHandler redisHandler)
                     {
                         result.Tasks = redisHandler._redis.HMGet<TaskInfo>("FreeScheduler_hset", taskIds)
-                            .Where(a => status == null || a.Status == status)
+						    .Where(a => string.IsNullOrWhiteSpace(topic) == false || a.Topic == topic)
+							.Where(a => status == null || a.Status == status)
                             .Where(a => (betweenTime == null || a.CreateTime > betweenTime) && (endTime == null || a.CreateTime <= endTime))
                             .ToList();
                     }
@@ -88,6 +91,7 @@ namespace FreeScheduler
                 if (scheduler._taskHandler is FreeSqlHandler fsqlHandler)
                 {
                     result.Tasks = fsqlHandler._fsql.Select<TaskInfo>()
+                        .WhereIf(string.IsNullOrWhiteSpace(topic) == false, a => a.Topic == topic)
                         .WhereIf(status != null, a => a.Status == status)
                         .WhereIf(betweenTime != null, a => a.CreateTime > betweenTime)
                         .WhereIf(endTime != null, a => a.CreateTime <= endTime)
@@ -99,7 +103,9 @@ namespace FreeScheduler
                 }
                 else if (scheduler._taskHandler is FreeRedisHandler redisHandler)
                 {
-                    var zkey = status == null ? "FreeScheduler_zset_all" : $"FreeScheduler_zset_{status}";
+                    var zkey = "FreeScheduler_zset_all";
+                    if (string.IsNullOrWhiteSpace(topic) == false) zkey = status == null ? $"FreeScheduler_zset_{topic}_all" : $"FreeScheduler_zset_{topic}_{status}";
+                    else zkey = status == null ? "FreeScheduler_zset_all" : $"FreeScheduler_zset_{status}";
                     var max = endTime == null ? "+inf" : string.Concat(Math.Max(0, (int)endTime.Value.Subtract(_2020).TotalSeconds));
                     var min = betweenTime == null ? "-inf" : string.Concat(Math.Max(0, (int)betweenTime.Value.Subtract(_2020).TotalSeconds));
                     var taskIds = redisHandler._redis.ZRevRangeByScore(zkey, max, min, Math.Max(0, page - 1) * limit, limit);
@@ -109,7 +115,8 @@ namespace FreeScheduler
                 else if (scheduler._taskHandler is TestHandler testHandler)
                 {
                     var queryTasks = testHandler._memoryTasks.Values
-                        .Where(a => status == null || a.Status == status.Value)
+						.Where(a => string.IsNullOrWhiteSpace(topic) == false || a.Topic == topic)
+						.Where(a => status == null || a.Status == status.Value)
                         .Where(a => (betweenTime == null || a.CreateTime > betweenTime) && (endTime == null || a.CreateTime <= endTime));
                     result.Total = queryTasks.Count();
                     result.Tasks = queryTasks.OrderByDescending(a => a.Id).Skip(Math.Max(0, page - 1) * limit).Take(limit).ToList();
@@ -168,8 +175,11 @@ namespace FreeScheduler
                 var _2020 = new DateTime(2020, 1, 1);
                 var taskScore = (decimal)DateTime.UtcNow.AddSeconds(-reserveSeconds).Subtract(_2020).TotalSeconds;
                 var taskIds = redis.ZRangeByScore($"FreeScheduler_zset_{TaskStatus.Completed}", 0, taskScore);
-                foreach (var taskId in taskIds)
+                var tasks = redis.HMGet<TaskInfo>("FreeScheduler_hset", taskIds);
+				for (var taskIndex = 0; taskIndex < taskIds.Length; taskIndex++)
                 {
+                    var taskId = taskIds[taskIndex];
+					var task = tasks[taskIndex];
                     using (var pipe = redis.StartPipe())
                     {
                         pipe.HDel("FreeScheduler_hset", taskId);
@@ -177,7 +187,16 @@ namespace FreeScheduler
                         pipe.ZRem($"FreeScheduler_zset_{TaskStatus.Running}", taskId);
                         pipe.ZRem($"FreeScheduler_zset_{TaskStatus.Paused}", taskId);
                         pipe.ZRem($"FreeScheduler_zset_{TaskStatus.Completed}", taskId);
-                        pipe.Del($"FreeScheduler_zset_log:{taskId}");
+
+                        if (task != null)
+                        {
+                            pipe.ZRem($"FreeScheduler_zset_{task.Topic}_all", taskId);
+                            pipe.ZRem($"FreeScheduler_zset_{task.Topic}_{TaskStatus.Running}", taskId);
+                            pipe.ZRem($"FreeScheduler_zset_{task.Topic}_{TaskStatus.Paused}", taskId);
+                            pipe.ZRem($"FreeScheduler_zset_{task.Topic}_{TaskStatus.Completed}", taskId);
+                        }
+
+						pipe.Del($"FreeScheduler_zset_log:{taskId}");
                         foreach (var scan in redis.ZScan($"FreeScheduler_zset_log:{taskId}", "*", 100))
                             if (scan.Length > 0)
                                 pipe.ZRem("FreeScheduler_zset_log_all", scan.Select(a => a.member).ToArray());

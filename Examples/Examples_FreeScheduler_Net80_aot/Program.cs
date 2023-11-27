@@ -17,21 +17,21 @@ var fsql = new FreeSql.FreeSqlBuilder()
     .UseMonitorCommand(cmd => Console.WriteLine(cmd.CommandText + "\r\n"))
     .Build();
 
-//var redis = new RedisClient("127.0.0.1,poolsize=10,exitAutoDisposePool=false");
-//redis.Serialize = obj => JsonConvert.SerializeObject(obj);
-//redis.Deserialize = (json, type) => JsonConvert.DeserializeObject(json, type);
-//redis.Notice += (s, e) =>
-//{
-//    if (e.Exception != null)
-//        Console.WriteLine(e.Log);
-//};
+var redis = new RedisClient("127.0.0.1,poolsize=10,exitAutoDisposePool=false");
+redis.Serialize = obj => JsonConvert.SerializeObject(obj);
+redis.Deserialize = (json, type) => JsonConvert.DeserializeObject(json, type);
+redis.Notice += (s, e) =>
+{
+    if (e.Exception != null)
+        Console.WriteLine(e.Log);
+};
 Scheduler scheduler = new FreeSchedulerBuilder()
     .OnExecuting(task =>
     {
         Console.WriteLine($"[{DateTime.Now.ToString("HH:mm:ss.fff")}] {task.Topic} 被执行");
         task.Remark("log..");
     })
-    .UseStorage(fsql)
+    .UseStorage(redis)
     //.UseCluster(redis, new ClusterOptions
     //{
     //    Name = Environment.GetCommandLineArgs().FirstOrDefault(a => a.StartsWith("--name="))?.Substring(7),
@@ -39,7 +39,7 @@ Scheduler scheduler = new FreeSchedulerBuilder()
     //    OfflineSeconds = 5,
     //})
     .Build();
-if (Datafeed.GetPage(scheduler, null, null, null, null).Total == 0)
+if (Datafeed.GetPage(scheduler).Total == 0)
 {
     scheduler.AddTask("[系统预留]清理任务数据", "86400", -1, 3600);
     scheduler.AddTaskRunOnWeek("（周一）武林大会", "json", -1, "1:12:00:00");
