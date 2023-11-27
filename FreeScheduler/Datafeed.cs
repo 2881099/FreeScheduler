@@ -23,10 +23,12 @@ namespace FreeScheduler
                 public string Name { get; set; }
                 public int TaskCount { get; set; }
             }
-        }
-        public static ResultGetPage GetPage(Scheduler scheduler, string clusterId = null, string topic = null, TaskStatus? status = null, DateTime? betweenTime = null, DateTime? endTime = null, int limit = 20, int page = 1)
+		}
+		public static Func<Scheduler, string, string, TaskStatus?, DateTime?, DateTime?, int, int, ResultGetPage> GetPageExtend;
+		public static ResultGetPage GetPage(Scheduler scheduler, string clusterId = null, string topic = null, TaskStatus? status = null, DateTime? betweenTime = null, DateTime? endTime = null, int limit = 20, int page = 1)
 		{
             topic = topic?.Trim();
+            if (GetPageExtend != null) return GetPageExtend(scheduler, clusterId, topic, status, betweenTime, endTime, limit, page);
 			var result = new ResultGetPage();
             result.Timestamp = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
             result.Description = $"集群: {(scheduler.ClusterId == null ? "否" : $"是, 名称: {(string.IsNullOrWhiteSpace(scheduler.ClusterOptions.Name) ? scheduler.ClusterId : scheduler.ClusterOptions.Name)}")}";
@@ -104,7 +106,7 @@ namespace FreeScheduler
                 else if (scheduler._taskHandler is FreeRedisHandler redisHandler)
                 {
                     var zkey = "FreeScheduler_zset_all";
-                    if (string.IsNullOrWhiteSpace(topic) == false) zkey = status == null ? $"FreeScheduler_zset_{topic}_all" : $"FreeScheduler_zset_{topic}_{status}";
+                    if (string.IsNullOrWhiteSpace(topic) == false) zkey = status == null ? $"FreeScheduler_zset_q:{topic}_all" : $"FreeScheduler_zset_q:{topic}_{status}";
                     else zkey = status == null ? "FreeScheduler_zset_all" : $"FreeScheduler_zset_{status}";
                     var max = endTime == null ? "+inf" : string.Concat(Math.Max(0, (int)endTime.Value.Subtract(_2020).TotalSeconds));
                     var min = betweenTime == null ? "-inf" : string.Concat(Math.Max(0, (int)betweenTime.Value.Subtract(_2020).TotalSeconds));
@@ -190,10 +192,10 @@ namespace FreeScheduler
 
                         if (task != null)
                         {
-                            pipe.ZRem($"FreeScheduler_zset_{task.Topic}_all", taskId);
-                            pipe.ZRem($"FreeScheduler_zset_{task.Topic}_{TaskStatus.Running}", taskId);
-                            pipe.ZRem($"FreeScheduler_zset_{task.Topic}_{TaskStatus.Paused}", taskId);
-                            pipe.ZRem($"FreeScheduler_zset_{task.Topic}_{TaskStatus.Completed}", taskId);
+                            pipe.ZRem($"FreeScheduler_zset_q:{task.Topic}_all", taskId);
+                            pipe.ZRem($"FreeScheduler_zset_q:{task.Topic}_{TaskStatus.Running}", taskId);
+                            pipe.ZRem($"FreeScheduler_zset_q:{task.Topic}_{TaskStatus.Paused}", taskId);
+                            pipe.ZRem($"FreeScheduler_zset_q:{task.Topic}_{TaskStatus.Completed}", taskId);
                         }
 
 						pipe.Del($"FreeScheduler_zset_log:{taskId}");
@@ -240,9 +242,11 @@ namespace FreeScheduler
             public int Total { get; set; }
             public List<TaskLog> Logs { get; set; }
         }
+        public static Func<Scheduler, string, int, int, ResultGetLogs> GetLogsExtend;
         public static ResultGetLogs GetLogs(Scheduler scheduler, string taskId, int limit = 20, int page = 1)
         {
-            var result = new ResultGetLogs();
+            if (GetLogsExtend != null) return GetLogsExtend(scheduler, taskId, limit, page);
+			var result = new ResultGetLogs();
             if (scheduler._taskHandler is FreeSqlHandler fsqlHandler)
             {
                 result.Logs = fsqlHandler._fsql.Select<TaskLog>()

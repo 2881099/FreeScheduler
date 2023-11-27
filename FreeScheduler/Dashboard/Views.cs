@@ -15,7 +15,7 @@ namespace FreeScheduler.Dashboard
 		<div class=""table-responsive"">
 			<form id=""form_list"" action=""./del"" method=""post"">
 				<input type=""hidden"" name=""__callback"" value=""del_callback""/>
-				<table id=""GridView1"" cellspacing=""0"" rules=""all"" border=""1"" style=""border-collapse:collapse;"" class=""table table-bordered table-hover text-nowrap"">
+				<table id=""GridView1"" cellspacing=""0"" rules=""all"" border=""1"" style=""border-collapse:collapse;"" class=""table table-bordered table-hover"">
 					<tr>
 						<th scope=""col"">时间</th>
 						<th scope=""col"">集群Id</th>
@@ -42,7 +42,7 @@ for (var a = 0; a < dto.Logs.length; a++) {
 								<td>' + new Date(log.CreateTime*1000).toLocaleString() + '</td>\
 								<td>' + log.ClusterId + '</td>\
 								<td>' + log.ClusterName + '</td>\
-								<td>' + log.Message + '</td>\
+								<td style=""overflow-wrap: break-word;word-break: break-all;"">' + log.Message + '</td>\
                             </tr>');
 }
 if (sb.length > 0) $('#dto_list').html(sb);
@@ -92,7 +92,7 @@ if (sb.length > 0) $('#dto_list').html(sb);
 		<div class=""table-responsive"">
 			<form id=""form_list"" action=""./del"" method=""post"">
 				<input type=""hidden"" name=""__callback"" value=""del_callback""/>
-				<table id=""GridView1"" cellspacing=""0"" rules=""all"" border=""1"" style=""border-collapse:collapse;"" class=""table table-bordered table-hover text-nowrap"">
+				<table id=""GridView1"" cellspacing=""0"" rules=""all"" border=""1"" style=""border-collapse:collapse;"" class=""table table-bordered table-hover"">
 					<tr>
 						<th scope=""col"">任务编号</th>
 						<th scope=""col"" class=""text-right"">第几轮</th>
@@ -123,8 +123,8 @@ for (var a = 0; a < dto.Logs.length; a++) {
 								<td class=""text-right"">' + log.Round + '</td>\
 								<td class=""text-right"">' + log.ElapsedMilliseconds + 'ms</td>\
 								<td class=""text-center"">' + (log.Success ? '<font color=green>是</font>' : '<font color=red>否</font>') + '</td>\
-								<td>' + log.Exception + '</td>\
-								<td>' + log.Remark + '</td>\
+								<td style=""overflow-wrap: break-word;word-break: break-all;"">' + log.Exception + '</td>\
+								<td style=""overflow-wrap: break-word;word-break: break-all;"">' + log.Remark + '</td>\
 								<td>' + new Date(log.CreateTime*1000).toLocaleString() + '</td>\
                             </tr>');
 }
@@ -261,7 +261,7 @@ for (var a = 0; a < dto.Tasks.length; a++) {
 	return task.CurrentRound + '/' + task.Round;
 })() + '</td>\
 								<td>' + task.Status + '</td>\
-								<td>' + task.Body + '</td>\
+								<td style=""overflow-wrap: break-word;word-break: break-all;"">' + task.Body + '</td>\
 								<td>' + new Date(task.CreateTime*1000).toLocaleString() + '</td>\
 								<td>' + (function() {
 	if (dto.Description.indexOf('存储: Memory') == -1) return '<a href=""../TaskLog/?taskId=' + task.Id + '"">' + new Date(task.LastRunTime*1000).toLocaleString() + '</a>';
