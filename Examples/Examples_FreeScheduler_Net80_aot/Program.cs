@@ -8,8 +8,11 @@ Enum.GetValues(typeof(TaskInterval));
 Enum.GetValues(typeof(FreeScheduler.TaskStatus));
 
 var fsql = new FreeSql.FreeSqlBuilder()
-    .UseConnectionString(FreeSql.DataType.Sqlite, $"Data Source={AppContext.BaseDirectory}/test1.db;Pooling=true")
-    .UseAutoSyncStructure(true)
+	//.UseConnectionString(FreeSql.DataType.MySql, $"Data Source=127.0.0.1;Port=3306;User ID=root;Password=root; Initial Catalog=cccddd;Charset=utf8; SslMode=none;Min pool size=1")
+	.UseConnectionString(FreeSql.DataType.Sqlite, $"Data Source={AppContext.BaseDirectory}/test1.db;Pooling=true")
+	//.UseConnectionString(FreeSql.DataType.PostgreSQL, "Host=192.168.164.10;Port=5432;Username=postgres;Password=123456;Database=toc;Pooling=true;Maximum Pool Size=2")
+	//.UseNameConvert(FreeSql.Internal.NameConvertType.ToLower)
+	.UseAutoSyncStructure(true)
     .UseNoneCommandParameter(true)
     .UseMonitorCommand(cmd => Console.WriteLine(cmd.CommandText + "\r\n"))
     .Build();

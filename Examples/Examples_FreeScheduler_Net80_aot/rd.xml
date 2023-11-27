@@ -4,6 +4,10 @@
 		</Assembly>
 		<!--<Assembly Name="FreeRedis"  Dynamic="Required All">
 		</Assembly>-->
+		<!--<Assembly Name="FreeSql"  Dynamic="Required All">
+		</Assembly>-->
+		<Assembly Name="Npgsql"  Dynamic="Required All">
+		</Assembly>
 		<Assembly Name="FreeSql"  Dynamic="Required All">
 		</Assembly>
 	</Application>
