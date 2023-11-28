@@ -243,7 +243,7 @@ for (var a = 0; a < dto.Tasks.length; a++) {
 	var task = dto.Tasks[a];
 	for(var b in task) if(task[b]==null)task[b]='';
 	sb.push('<tr>\
-								<td>\
+								<td class=""text-nowrap"">\
 									<input type=""button"" class=""btn btn-xs btn-danger"" value=""删除"" onclick=""if (confirm(\'确认删除吗？\')) top.callTask(\'delete\', \'' + task.Id + '\')"" /> \
 ' + (function() {
 	if (task.Status == 2 || task.Status == 'Completed') return '';
@@ -254,8 +254,8 @@ for (var a = 0; a < dto.Tasks.length; a++) {
 })() + '\
 								</td>\
 								<td>' + task.Id + '</td>\
-								<td>' + task.Topic + '</td>\
-								<td>' + task.Interval + ' ' + task.IntervalArgument + '</td>\
+								<td class=""text-nowrap"">' + task.Topic + '</td>\
+								<td class=""text-nowrap"">' + task.Interval + ' ' + task.IntervalArgument + '</td>\
 								<td class=""text-right"">' + (function() {
 	if (dto.Description.indexOf('存储: Memory') == -1) return '<a href=""../TaskLog/?taskId=' + task.Id + '"">' + task.CurrentRound + '/' + task.Round + '</a>';
 	return task.CurrentRound + '/' + task.Round;
