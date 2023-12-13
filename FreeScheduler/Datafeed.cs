@@ -141,10 +141,10 @@ namespace FreeScheduler
                     taskId = scheduler.AddTaskRunOnDay(topic, body, round, argument);
                     break;
                 case TaskInterval.RunOnWeek:
-                    taskId = scheduler.AddTaskRunOnDay(topic, body, round, argument);
+                    taskId = scheduler.AddTaskRunOnWeek(topic, body, round, argument);
                     break;
                 case TaskInterval.RunOnMonth:
-                    taskId = scheduler.AddTaskRunOnDay(topic, body, round, argument);
+                    taskId = scheduler.AddTaskRunOnMonth(topic, body, round, argument);
                     break;
                 case TaskInterval.Custom:
                     taskId = scheduler.AddTaskCustom(topic, body, argument);
@@ -177,34 +177,37 @@ namespace FreeScheduler
                 var _2020 = new DateTime(2020, 1, 1);
                 var taskScore = (decimal)DateTime.UtcNow.AddSeconds(-reserveSeconds).Subtract(_2020).TotalSeconds;
                 var taskIds = redis.ZRangeByScore($"FreeScheduler_zset_{TaskStatus.Completed}", 0, taskScore);
-                var tasks = redis.HMGet<TaskInfo>("FreeScheduler_hset", taskIds);
-				for (var taskIndex = 0; taskIndex < taskIds.Length; taskIndex++)
+                if (taskIds.Any())
                 {
-                    var taskId = taskIds[taskIndex];
-					var task = tasks[taskIndex];
-                    using (var pipe = redis.StartPipe())
+                    var tasks = redis.HMGet<TaskInfo>("FreeScheduler_hset", taskIds);
+                    for (var taskIndex = 0; taskIndex < taskIds.Length; taskIndex++)
                     {
-                        pipe.HDel("FreeScheduler_hset", taskId);
-                        pipe.ZRem($"FreeScheduler_zset_all", taskId);
-                        pipe.ZRem($"FreeScheduler_zset_{TaskStatus.Running}", taskId);
-                        pipe.ZRem($"FreeScheduler_zset_{TaskStatus.Paused}", taskId);
-                        pipe.ZRem($"FreeScheduler_zset_{TaskStatus.Completed}", taskId);
-
-                        if (task != null)
+                        var taskId = taskIds[taskIndex];
+                        var task = tasks[taskIndex];
+                        using (var pipe = redis.StartPipe())
                         {
-                            pipe.ZRem($"FreeScheduler_zset_q:{task.Topic}_all", taskId);
-                            pipe.ZRem($"FreeScheduler_zset_q:{task.Topic}_{TaskStatus.Running}", taskId);
-                            pipe.ZRem($"FreeScheduler_zset_q:{task.Topic}_{TaskStatus.Paused}", taskId);
-                            pipe.ZRem($"FreeScheduler_zset_q:{task.Topic}_{TaskStatus.Completed}", taskId);
-                        }
+                            pipe.HDel("FreeScheduler_hset", taskId);
+                            pipe.ZRem($"FreeScheduler_zset_all", taskId);
+                            pipe.ZRem($"FreeScheduler_zset_{TaskStatus.Running}", taskId);
+                            pipe.ZRem($"FreeScheduler_zset_{TaskStatus.Paused}", taskId);
+                            pipe.ZRem($"FreeScheduler_zset_{TaskStatus.Completed}", taskId);
 
-						pipe.Del($"FreeScheduler_zset_log:{taskId}");
-                        foreach (var scan in redis.ZScan($"FreeScheduler_zset_log:{taskId}", "*", 100))
-                            if (scan.Length > 0)
-                                pipe.ZRem("FreeScheduler_zset_log_all", scan.Select(a => a.member).ToArray());
-                        var ret = pipe.EndPipe();
-                        affrows += int.Parse(ret[0]?.ToString());
-                        for (var a = 6; a < ret.Length; a++) affrows += int.Parse(ret[a]?.ToString());
+                            if (task != null)
+                            {
+                                pipe.ZRem($"FreeScheduler_zset_q:{task.Topic}_all", taskId);
+                                pipe.ZRem($"FreeScheduler_zset_q:{task.Topic}_{TaskStatus.Running}", taskId);
+                                pipe.ZRem($"FreeScheduler_zset_q:{task.Topic}_{TaskStatus.Paused}", taskId);
+                                pipe.ZRem($"FreeScheduler_zset_q:{task.Topic}_{TaskStatus.Completed}", taskId);
+                            }
+
+                            pipe.Del($"FreeScheduler_zset_log:{taskId}");
+                            foreach (var scan in redis.ZScan($"FreeScheduler_zset_log:{taskId}", "*", 100))
+                                if (scan.Length > 0)
+                                    pipe.ZRem("FreeScheduler_zset_log_all", scan.Select(a => a.member).ToArray());
+                            var ret = pipe.EndPipe();
+                            affrows += int.Parse(ret[0]?.ToString());
+                            for (var a = 6; a < ret.Length; a++) affrows += int.Parse(ret[a]?.ToString());
+                        }
                     }
                 }
                 var logs = redis.ZRangeByScore("FreeScheduler_zset_log_all", 0, taskScore);

@@ -314,10 +314,7 @@ namespace FreeScheduler
 						Interlocked.Decrement(ref _quantityTaskRunning);
 					}
 				});
-			})
-			{
-
-			};
+			});
 			if (_tasks.TryAdd(task.Id, task))
 			{
 				if (isSave)

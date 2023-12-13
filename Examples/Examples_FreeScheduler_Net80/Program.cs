@@ -17,7 +17,6 @@ redis.Notice += (s, e) =>
     if (e.Exception != null)
     Console.WriteLine(e.Log);
 };
-
 Scheduler scheduler = new FreeSchedulerBuilder()
     .OnExecuting(task =>
     {
@@ -25,12 +24,12 @@ Scheduler scheduler = new FreeSchedulerBuilder()
         task.Remark("log..");
     })
     .UseStorage(redis)
-    .UseCluster(redis, new ClusterOptions
-    {
-        Name = Environment.GetCommandLineArgs().FirstOrDefault(a => a.StartsWith("--name="))?.Substring(7),
-        HeartbeatInterval = 2,
-        OfflineSeconds = 5,
-    })
+    //.UseCluster(redis, new ClusterOptions
+    //{
+    //    Name = Environment.GetCommandLineArgs().FirstOrDefault(a => a.StartsWith("--name="))?.Substring(7),
+    //    HeartbeatInterval = 2,
+    //    OfflineSeconds = 5,
+    //})
     .Build();
 if (Datafeed.GetPage(scheduler).Total == 0)
 {
