@@ -113,6 +113,14 @@ if (sb.length > 0) $('#dto_list').html(sb);
 
 <script type=""text/javascript"">
 	(function () {
+
+function htmlEncode(html){
+    var temp = document.createElement (""div"");
+    (temp.textContent != undefined ) ? (temp.textContent = html) : (temp.innerText = html);
+    var output = temp.innerHTML;
+    temp = null;
+    return output;
+}
 var dto = {};
 var sb = [];
 for (var a = 0; a < dto.Logs.length; a++) {
@@ -124,7 +132,7 @@ for (var a = 0; a < dto.Logs.length; a++) {
 								<td class=""text-right"">' + log.ElapsedMilliseconds + 'ms</td>\
 								<td class=""text-center"">' + (log.Success ? '<font color=green>是</font>' : '<font color=red>否</font>') + '</td>\
 								<td style=""overflow-wrap: break-word;word-break: break-all;"">' + log.Exception + '</td>\
-								<td style=""overflow-wrap: break-word;word-break: break-all;"">' + log.Remark + '</td>\
+								<td style=""overflow-wrap: break-word;word-break: break-all;"">' + htmlEncode(log.Remark) + '</td>\
 								<td>' + new Date(log.CreateTime*1000).toLocaleString() + '</td>\
                             </tr>');
 }
@@ -225,7 +233,7 @@ if (sb.length > 0) $('#dto_list').html(sb);
 <script type=""text/javascript"">
 	(function () {
 var dto = {};
-$('#dto_Description').html(dto.Description.replace(/存储\: (FreeSql|Redis)/, '存储: $1 <a href=""./add?tpl=CleanStorageData"">数据太多如何清理？</a>'));
+$('#dto_Description').html(dto.Description.replace(/存储\: (FreeSql|Redis)/, '存储: $1 <a href=""./add?tasktpl=2"">数据太多如何清理？</a>'));
 var fscClusterText = [];
 var fscClusterValue = [];
 for (var a = 0; dto.Clusters != null && a < dto.Clusters.length; a++) {
@@ -339,12 +347,20 @@ if (sb.length > 0) $('#dto_list').html(sb);
 				<div>
 					<table cellspacing=""0"" rules=""all"" class=""table table-bordered table-hover"" border=""1"" style=""border-collapse:collapse;"">
 						<tr>
+							<td>模板</td>
+							<td>
+								<input id=tasktpl_01 name=tasktpl type=radio value=1 /><label for=tasktpl_01>HTTP请求</label>
+								<input id=tasktpl_02 name=tasktpl type=radio value=2 /><label for=tasktpl_02>清理任务数据</label>
+
+							</td>
+						</tr>
+						<tr>
 							<td>标题</td>
 							<td><input name=""Topic"" type=""text"" class=""datepicker"" style=""width:60%;"" placeholder=""用在 OnExecuting 区分任务"" /></td>
 						</tr>
 					    <tr>
 							<td id=""BodyLabel"">数据</td>
-							<td><textarea name=""Body"" style=""width:60%;height:100px;"" editor=""ueditor"" placeholder=""用在 OnExecuting 区分相同 Title 任务的参数数据""></textarea></td>
+							<td><textarea name=""Body"" style=""width:60%;height:200px;"" editor=""ueditor"" placeholder=""用在 OnExecuting 区分相同 Title 任务的参数数据""></textarea></td>
 						</tr>
 					    <tr>
 							<td>轮次</td>
@@ -384,6 +400,37 @@ if (sb.length > 0) $('#dto_list').html(sb);
 <script type=""text/javascript"">
 	(function () {
 		var form = $('#form_add')[0];
+
+$('input[name=tasktpl]').change(function() {
+	var val = $(this).val();
+	if (val == '1') {
+		form.Topic.value = '[系统预留]Http请求';
+		form.Body.value = `{
+	""method"": ""get"",
+	""url"": ""https://freesql.net/guide/freescheduler.html"",
+	""header"":
+	{
+		""Content-Type"": ""application/json"",
+	},
+	""body"": ""{}"",
+}
+`;
+		form.Round.value = -1;
+		return;
+	}
+	if (val == '2') {
+		form.Topic.value = '[系统预留]清理任务数据';
+		form.Body.value = '86400';
+		$('#form_add #BodyLabel').html('清理多久之前的记录（单位：秒）<br>已完成的任务');
+		form.Round.value = -1;
+		return;
+	}
+});
+if (top.mainViewNav.query.tasktpl) {
+	var radio = $('input[name=tasktpl][value=' + top.mainViewNav.query.tasktpl + ']');
+	radio.click();
+}
+
 		top.IntervalChange = function(val) {
 			var tips = null;
 			if (val == 'SEC') {

@@ -1,6 +1,7 @@
 ﻿using FreeRedis;
 using FreeScheduler;
 using FreeScheduler.TaskHandlers;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Reflection;
 
@@ -124,13 +125,36 @@ public class FreeSchedulerBuilder
 
         public override void OnExecuting(Scheduler scheduler, TaskInfo task)
         {
-            if (task.Topic == "[系统预留]清理任务数据")
-            {
-                var affrows = Datafeed.CleanStorageData(scheduler, (int)uint.Parse(task.Body) + 1);
-                task.Remark($"已清理 {affrows} 条数据");
-            }
-            Executing?.Invoke(task);
+            SystemExecuting(scheduler, task);
+			Executing?.Invoke(task);
         }
+
+        internal static void SystemExecuting(Scheduler scheduler, TaskInfo task)
+        {
+			switch (task.Topic)
+			{
+				case "[系统预留]清理任务数据":
+					var affrows = Datafeed.CleanStorageData(scheduler, (int)uint.Parse(task.Body) + 1);
+					task.Remark($"已清理 {affrows} 条数据");
+					break;
+                case "[系统预留]Http请求":
+                    var httpArgs = JToken.Parse(task.Body);
+                    using (var http = new TcpClientHttpRequest())
+                    {
+                        http.Method = httpArgs["method"]?.ToString();
+                        http.Action = httpArgs["url"]?.ToString();
+                        if (httpArgs["header"]?.Type == JTokenType.Object)
+                        {
+                            foreach(var head in ((JObject)httpArgs["header"]).Properties())
+                                http.Headers[head.Name] = head.Value?.ToString();
+						}
+                        http.Send(httpArgs["body"]?.ToString());
+                        if (http.Response.ContentType.Contains("text/json")) task.Remark(http.Response.StatusCode.ToString() + " " + http.Response.Xml);
+                        else task.Remark(http.Response.StatusCode.ToString());
+					}
+                    break;
+			}
+		}
     }
     class FreeRedisTaskHandler : FreeRedisHandler
     {
@@ -139,12 +163,8 @@ public class FreeSchedulerBuilder
 
         public override void OnExecuting(Scheduler scheduler, TaskInfo task)
         {
-            if (task.Topic == "[系统预留]清理任务数据")
-            {
-                var affrows = Datafeed.CleanStorageData(scheduler, (int)uint.Parse(task.Body) + 1);
-                task.Remark($"已清理 {affrows} 条数据");
-            }
-            Executing?.Invoke(task);
+			FreeSqlTaskHandler.SystemExecuting(scheduler, task);
+			Executing?.Invoke(task);
         }
     }
 }

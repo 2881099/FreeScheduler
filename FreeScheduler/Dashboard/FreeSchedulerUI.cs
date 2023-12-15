@@ -72,21 +72,6 @@ namespace FreeScheduler
                             return;
                         }
                         var html = Views.TaskInfo_add;
-                        switch (req.Query["tpl"])
-                        {
-                            case "CleanStorageData":
-                                html = html + @"<script>
-(function() {
-    var form = $('#form_add')[0];
-    form.Topic.value = '[系统预留]清理任务数据';
-    form.Body.value = '86400';
-    $('#form_add #BodyLabel').html('清理多久之前的记录（单位：秒）<br>已完成的任务');
-    form.Round.value = -1;
-})()
-</script>";
-                                break;
-                        }
-
                         await res.WriteAsync(html);
                         return;
                     }

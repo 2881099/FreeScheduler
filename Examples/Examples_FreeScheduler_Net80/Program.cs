@@ -17,7 +17,7 @@ redis.Notice += (s, e) =>
     if (e.Exception != null)
     Console.WriteLine(e.Log);
 };
-//redis.FlushDb();
+redis.FlushDb();
 Scheduler scheduler = new FreeSchedulerBuilder()
     .OnExecuting(task =>
     {
