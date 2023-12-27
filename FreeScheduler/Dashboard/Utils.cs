@@ -49,6 +49,7 @@ namespace FreeScheduler.Dashboard
         {
             public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
             {
+				return null;
                 if (reader.TokenType != JsonToken.Integer)
                     throw new Exception($"Unexpected token parsing date. Expected Integer, got {reader.TokenType}.");
 
@@ -62,18 +63,18 @@ namespace FreeScheduler.Dashboard
 
             public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
 			{
-                long ticks;
                 if (value is DateTime || value is DateTime?)
                 {
+					writer.WriteValue(((DateTime)value).ToString("yyyy-MM-dd HH:mm:ss"));
+					return;
                     var epoc = new DateTime(1970, 1, 1);
                     var delta = ((DateTime)value) - epoc;
                     if (delta.TotalSeconds < 0)
                         throw new ArgumentOutOfRangeException("Unix epoc starts January 1st, 1970");
-                    ticks = (long)delta.TotalSeconds;
+					writer.WriteValue((long)delta.TotalSeconds);
                 }
                 else
                     throw new Exception("Expected date object value.");
-                writer.WriteValue(ticks);
             }
 		}
 

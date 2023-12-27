@@ -18,7 +18,7 @@ namespace FreeScheduler.TaskHandlers
         {
             if (pageNumber <= 0) pageNumber = 1;
             if (pageSize <= 0) pageSize = 100;
-            var taskScore = (decimal)DateTime.UtcNow.Subtract(_2020).TotalSeconds;
+            var taskScore = (decimal)DateTime.UtcNow.AddHours(24).Subtract(_2020).TotalSeconds;
             var taskIds = _redis.ZRangeByScore($"FreeScheduler_zset_{TaskStatus.Running}", 0, taskScore, Math.Max(0, pageNumber - 1) * pageSize, pageSize);
             if (taskIds.Length == 0) return new TaskInfo[0];
             return _redis.HMGet<TaskInfo>("FreeScheduler_hset", taskIds);
@@ -82,13 +82,13 @@ namespace FreeScheduler.TaskHandlers
                     if (status != t.Status)
                     {
                         pipe.ZRem($"FreeScheduler_zset_{status}", task.Id);
-						pipe.ZRem($"FreeScheduler_zset_q:{task.Topic}_{status}", task.Id);
-					}
+                        pipe.ZRem($"FreeScheduler_zset_q:{task.Topic}_{status}", task.Id);
+                    }
                     pipe.ZAdd($"FreeScheduler_zset_{t.Status}", taskScore, task.Id);
-					pipe.ZAdd($"FreeScheduler_zset_q:{task.Topic}_{t.Status}", taskScore, task.Id);
+                    pipe.ZAdd($"FreeScheduler_zset_q:{task.Topic}_{t.Status}", taskScore, task.Id);
 
-					pipe.ZAdd($"FreeScheduler_zset_log:{task.Id}", resultScore, resultMember);
-					pipe.ZAdd("FreeScheduler_zset_log_all", resultScore, resultMember);
+                    pipe.ZAdd($"FreeScheduler_zset_log:{task.Id}", resultScore, resultMember);
+                    pipe.ZAdd("FreeScheduler_zset_log_all", resultScore, resultMember);
                     pipe.EndPipe();
                 }
             }
@@ -96,7 +96,7 @@ namespace FreeScheduler.TaskHandlers
             {
                 Console.WriteLine($"[{DateTime.Now.ToString("HH:mm:ss")}] {task.Topic} FreeRedisHandler.OnExecuted 错误：{ex.Message}");
             }
-}
+        }
         readonly DateTime _2020 = new DateTime(2020, 1, 1);
 
         public virtual void OnExecuting(Scheduler scheduler, TaskInfo task)

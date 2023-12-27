@@ -67,11 +67,10 @@ namespace FreeScheduler
 		internal string RemarkValue { get; set; }
 		public void Remark(string remark) => RemarkValue = $"{RemarkValue}, {remark}";
 
-        public TimeSpan? GetInterval(int curRound)
+        public TimeSpan? GetInterval(DateTime now, int curRound)
 		{
 			if (curRound > Round) curRound = Round;
 			if (curRound < 0) curRound = 0;
-			DateTime now = DateTime.UtcNow;
 			DateTime curt = DateTime.MinValue;
 			TimeSpan ts = TimeSpan.Zero;
 			uint ww = 0, hh = 0, mm = 0, ss = 0;

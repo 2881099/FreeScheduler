@@ -49,7 +49,7 @@ namespace FreeScheduler
 
         void Logger(string msg)
         {
-            var timestamp = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
+            var timestamp = Scheduler.GetJsTime();
             _redis.Eval("redis.call('lpush',KEYS[1],ARGV[1]); if(redis.call('llen',KEYS[1])>1000)then redis.call('rpop',KEYS[1]) end return 1", 
                 new[] { $"{Options.RedisPrefix}_log" }, $"{timestamp}|{ClusterId}|{Options.Name}|{msg}");
         }
@@ -68,7 +68,7 @@ namespace FreeScheduler
                 }
                 Logger($"alloc: {msg}");
                 var args = msg.Split('|');
-                var timestamp = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
+                var timestamp = Scheduler.GetJsTime();
                 int.TryParse(args[0], out var time);
                 if (timestamp - time > 60 * 5) return; //过滤超过5分钟之前的分配
                 switch (args[1])
@@ -95,7 +95,7 @@ namespace FreeScheduler
             if (string.IsNullOrWhiteSpace(msg)) return;
             Logger($"remote call: {msg}");
             var args = msg.Split('|');
-            var timestamp = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
+            var timestamp = Scheduler.GetJsTime();
             int.TryParse(args[0], out var time);
             if (timestamp - time > 60 * 5) return; //过滤超过5分钟之前的命令
             switch (args[1])
@@ -169,7 +169,7 @@ namespace FreeScheduler
                     {
                         if (_responseWait.TryAdd(waitId, wait))
                         {
-                            var timestamp = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
+                            var timestamp = Scheduler.GetJsTime();
                             _redis.Publish($"{Options.RedisPrefix}_{targetClusterId}", $"{timestamp}|{method}|{id}|{ClusterId}|{waitId}");
                             if (!wait.Wait.WaitOne(TimeSpan.FromSeconds(10)))
                             {
@@ -188,7 +188,7 @@ namespace FreeScheduler
 
         void HeartbeatOffline()
         {
-            var timestamp = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
+            var timestamp = Scheduler.GetJsTime();
             object timeoutResult = null;
             try
             {
@@ -245,7 +245,7 @@ if(ARGV[1]-tonumber(redis.call('hget',KEYS[1],a[1]))>120)then redis.call('zrem',
                     _redis.Eval($"for a=2,#ARGV do redis.call('zrem',KEYS[1],ARGV[a]) if(redis.call('hget',KEYS[2],ARGV[a])==ARGV[1])then redis.call('hdel',KEYS[2],ARGV[a]) end end return nil",
                         new[] { regkey, $"{Options.RedisPrefix}_register" }, 
                         new[] { tempClusterId }.Concat(scan.Select(a => a.member)).ToArray());
-                    var timestamp = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
+                    var timestamp = Scheduler.GetJsTime();
                     var taskIds = scan.Where(sr => sr.member.StartsWith($"{nameof(Scheduler.AddTask)}_")).Select(sr => sr.member.Substring(8)) //忽略内存任务 AddTempTask_
                         .Where(taskId => _scheduler._tasks.ContainsKey(taskId) == false)
                         .Select(taskId => $"{timestamp}|{nameof(ReloadTask)}|{taskId}").ToArray();
@@ -279,7 +279,7 @@ if(ARGV[1]-tonumber(redis.call('hget',KEYS[1],a[1]))>120)then redis.call('zrem',
         }
         public bool Register(string id, string targetKey)
         {
-            var timestamp = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
+            var timestamp = Scheduler.GetJsTime();
             var result = _redis.Eval(@"if(redis.call('hsetnx',KEYS[1],ARGV[3],ARGV[1])==1)then redis.call('zadd',KEYS[2],ARGV[2],ARGV[3]) return 1 end
 if(redis.call('hexists',KEYS[3],redis.call('hget',KEYS[1],ARGV[3]))==1)then redis.call('hset',KEYS[1],ARGV[3],ARGV[1]) redis.call('zadd',KEYS[2],ARGV[2],ARGV[3]) return 1 end return 0",
                 new[] { $"{Options.RedisPrefix}_register", $"{Options.RedisPrefix}_register_{ClusterId}", $"{Options.RedisPrefix}_offline" }, 

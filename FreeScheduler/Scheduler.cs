@@ -34,6 +34,12 @@ namespace FreeScheduler
 		internal ClusterContext _clusterContext;
 		public string ClusterId => _clusterContext?.ClusterId;
 		public ClusterOptions ClusterOptions => _clusterContext?.Options;
+		/// <summary>
+		/// 时区
+		/// </summary>
+		public TimeSpan TimeOffset { get; }
+		internal DateTime GetDateTime() => DateTime.UtcNow.Add(TimeOffset);
+		internal static int GetJsTime() => (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
 
         #region Dispose
         ~Scheduler() => Dispose();
@@ -57,15 +63,16 @@ namespace FreeScheduler
 		#endregion
 
 		[Obsolete("请使用最新的 var scheduler = new FreeSchedulerBuilder().OnExecuting(..).Build() 方式创建")]
-		public Scheduler(ITaskHandler taskHandler) : this(taskHandler, null, null) { }
+		public Scheduler(ITaskHandler taskHandler) : this(taskHandler, null, null, TimeSpan.Zero) { }
 		[Obsolete("请使用最新的 var scheduler = new FreeSchedulerBuilder().OnExecuting(..).UseCustomInterval(..).Build() 方式创建")]
-		public Scheduler(ITaskHandler taskHandler, ITaskIntervalCustomHandler taskIntervalCustomHandler) : this(taskHandler, taskIntervalCustomHandler, null) { }
-		internal Scheduler(ITaskHandler taskHandler, ITaskIntervalCustomHandler taskIntervalCustomHandler, ClusterContext culsterContext)
+		public Scheduler(ITaskHandler taskHandler, ITaskIntervalCustomHandler taskIntervalCustomHandler) : this(taskHandler, taskIntervalCustomHandler, null, TimeSpan.Zero) { }
+		internal Scheduler(ITaskHandler taskHandler, ITaskIntervalCustomHandler taskIntervalCustomHandler, ClusterContext culsterContext, TimeSpan timeOffset)
 		{
 			if (taskHandler == null) throw new ArgumentNullException("taskHandler 参数不能为 null");
 			_taskHandler = taskHandler;
 			_taskIntervalCustomHandler = taskIntervalCustomHandler;
 			_clusterContext = culsterContext;
+			TimeOffset = timeOffset;
 
             _ib = new IdleBus();
 			_ib.ScanOptions.Interval = TimeSpan.FromMilliseconds(200);
@@ -217,10 +224,10 @@ namespace FreeScheduler
 		{
 			var task = new TaskInfo
 			{
-				Id = $"{DateTime.UtcNow.ToString("yyyyMMdd")}.{Snowfake.Default.nextId()}",
+				Id = $"{GetDateTime().ToString("yyyyMMdd")}.{Snowfake.Default.nextId()}",
 				Topic = topic,
 				Body = body,
-				CreateTime = DateTime.UtcNow,
+				CreateTime = GetDateTime(),
 				Round = round,
 				Interval = interval,
 				IntervalArgument = argument,
@@ -267,7 +274,7 @@ namespace FreeScheduler
 					{
 						var result = new TaskLog
 						{
-							CreateTime = DateTime.UtcNow,
+							CreateTime = GetDateTime(),
 							TaskId = task.Id,
 							Round = currentRound,
 							Remark = remark,
@@ -296,7 +303,7 @@ namespace FreeScheduler
 							task.RemarkValue = null;
 							if (status != task.Status) result.Remark = $"{result.Remark}{(string.IsNullOrEmpty(result.Remark) ? "" : ", ")}[Executing] 任务状态 `{status}` 已转为 `{task.Status}`";
 							result.ElapsedMilliseconds = (long)DateTime.UtcNow.Subtract(startdt).TotalMilliseconds;
-							task.LastRunTime = DateTime.UtcNow;
+							task.LastRunTime = GetDateTime();
 							if (round != -1 && currentRound >= round) task.Status = TaskStatus.Completed;
 							_taskHandler.OnExecuted(this, task, result);
 						}
@@ -342,7 +349,7 @@ namespace FreeScheduler
 				if (task.Interval == TaskInterval.Custom)
 					nextTimeSpan = _taskIntervalCustomHandler.NextDelay(task);
 				else
-					nextTimeSpan = task.GetInterval(curRound);
+					nextTimeSpan = task.GetInterval(GetDateTime(), curRound);
 
 				if (nextTimeSpan == null)
 				{
@@ -356,7 +363,7 @@ namespace FreeScheduler
 					{
 						_taskHandler.OnExecuted(this, task, new TaskLog
 						{
-							CreateTime = DateTime.UtcNow,
+							CreateTime = GetDateTime(),
 							TaskId = task.Id,
 							Round = task.CurrentRound,
 							Remark = $"[NextInterval] 任务状态 `{status}` 已转为 `{task.Status}`",
@@ -441,7 +448,7 @@ namespace FreeScheduler
 			task.Status = TaskStatus.Running;
 			_taskHandler.OnExecuted(this, task, new TaskLog
 			{
-				CreateTime = DateTime.UtcNow,
+				CreateTime = GetDateTime(),
 				TaskId = task.Id,
 				Round = task.CurrentRound,
 				Remark = $"[ResumeTask] 任务状态 `{status}` 已转为 `{task.Status}`",
@@ -467,7 +474,7 @@ namespace FreeScheduler
 				{
 					_taskHandler.OnExecuted(this, task, new TaskLog
 					{
-						CreateTime = DateTime.UtcNow,
+						CreateTime = GetDateTime(),
 						TaskId = task.Id,
 						Round = task.CurrentRound,
 						Remark = $"[PauseTask] 任务状态 `{status}` 已转为 `{task.Status}`",
@@ -506,7 +513,7 @@ namespace FreeScheduler
 				var currentRound = task.IncrementCurrentRound();
 				var result = new TaskLog
 				{
-					CreateTime = DateTime.UtcNow,
+					CreateTime = GetDateTime(),
 					TaskId = task.Id,
 					Round = currentRound,
 					Remark = $"[RunNowTask] 立刻运行任务（人工触发）",
@@ -535,7 +542,7 @@ namespace FreeScheduler
                     task.RemarkValue = null;
                     if (status != task.Status) result.Remark = $"{result.Remark}{(string.IsNullOrEmpty(result.Remark) ? "" : ", ")}[Executing] 任务状态 `{status}` 已转为 `{task.Status}`";
 					result.ElapsedMilliseconds = (long)DateTime.UtcNow.Subtract(startdt).TotalMilliseconds;
-					task.LastRunTime = DateTime.UtcNow;
+					task.LastRunTime = GetDateTime();
 					_taskHandler.OnExecuted(this, task, result);
 				}
 				return true;

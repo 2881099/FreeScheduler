@@ -39,7 +39,7 @@ for (var a = 0; a < dto.Logs.length; a++) {
 	var log = dto.Logs[a];
 	for(var b in log) if(log[b]==null)log[b]='';
 	sb.push('<tr>\
-								<td>' + new Date(log.CreateTime*1000).toLocaleString() + '</td>\
+								<td>' + log.CreateTime + '</td>\
 								<td>' + log.ClusterId + '</td>\
 								<td>' + log.ClusterName + '</td>\
 								<td style=""overflow-wrap: break-word;word-break: break-all;"">' + log.Message + '</td>\
@@ -133,7 +133,7 @@ for (var a = 0; a < dto.Logs.length; a++) {
 								<td class=""text-center"">' + (log.Success ? '<font color=green>是</font>' : '<font color=red>否</font>') + '</td>\
 								<td style=""overflow-wrap: break-word;word-break: break-all;"">' + log.Exception + '</td>\
 								<td style=""overflow-wrap: break-word;word-break: break-all;"">' + htmlEncode(log.Remark) + '</td>\
-								<td>' + new Date(log.CreateTime*1000).toLocaleString() + '</td>\
+								<td>' + log.CreateTime + '</td>\
                             </tr>');
 }
 if (sb.length > 0) $('#dto_list').html(sb);
@@ -270,10 +270,10 @@ for (var a = 0; a < dto.Tasks.length; a++) {
 })() + '</td>\
 								<td>' + task.Status + '</td>\
 								<td style=""overflow-wrap: break-word;word-break: break-all;"">' + task.Body + '</td>\
-								<td>' + new Date(task.CreateTime*1000).toLocaleString() + '</td>\
+								<td>' + task.CreateTime + '</td>\
 								<td>' + (function() {
-	if (dto.Description.indexOf('存储: Memory') == -1) return '<a href=""../TaskLog/?taskId=' + task.Id + '"">' + new Date(task.LastRunTime*1000).toLocaleString() + '</a>';
-	return new Date(task.LastRunTime*1000).toLocaleString();
+	if (dto.Description.indexOf('存储: Memory') == -1) return '<a href=""../TaskLog/?taskId=' + task.Id + '"">' + task.LastRunTime + '</a>';
+	return task.LastRunTime;
 })() + '</td>\
 								<td>' + task.ErrorTimes + '</td>\
                             </tr>');
@@ -315,7 +315,23 @@ if (sb.length > 0) $('#dto_list').html(sb);
 
 		var qs = _clone(top.mainViewNav.query);
 		$('#topic_1').val((qs.topic || '').trim());
-		var date = (new Date().getYear() + 1900) + '-' + (new Date().getMonth() + 1) + '-' + new Date().getDate();
+		var yyyy = new Date().getYear() + 1900;
+		var mm = new Date().getMonth() + 1;
+		var dd = new Date().getDate();
+		dd += 1;
+		var maxdd = 0;
+		if (mm == 1 || mm == 3 || mm == 5 || mm == 7 || mm == 8 || mm == 10 || mm == 12) maxdd = 31;
+		else if (mm == 2) maxdd = (yyyy - 2000) % 4 == 0 ? 28 : 29;
+		else maxdd = 30;
+		if (dd > maxdd) {
+			dd = 1;
+			mm += 1;
+			if (mm > 12) {
+				mm = 1;
+				yyyy += 1;
+			}
+		}
+		var date = yyyy + '-' + mm + '-' + dd;
 		if (qs.createtime_1) $('#createtime_1').val(qs.createtime_1);
 		$('#createtime_2').val(qs.createtime_2 || date);
 		var page = cint(qs.page, 1);
@@ -445,25 +461,25 @@ var id = scheduler.AddTask(""topic1"", ""body1"", new [] { 5, 5, 10, 10, 60, 60 
 			if (val == 'RunOnDay') {
 				form.IntervalArgument.value = '08:00:00'
 				tips = `
-//每天 08:00:00 触发，指定utc时间，执行N次
+//每天 08:00:00 触发，执行N次（注意时区）
 var id = scheduler.AddTaskRunOnDay(""topic1"", ""body1"", round: -1, ""08:00:00"")`
 			}
 			if (val == 'RunOnWeek') {
 				form.IntervalArgument.value = '1:08:00:00'
 				tips = `
-//每周一 08:00:00 触发，指定utc时间，执行1次
+//每周一 08:00:00 触发，执行1次（注意时区）
 var id = scheduler.AddTaskRunOnWeek(""topic1"", ""body1"", round: 1, ""1:08:00:00"")
 
-//每周日 08:00:00 触发，指定utc时间，执行1次
+//每周日 08:00:00 触发，执行1次（注意时区）
 var id = scheduler.AddTaskRunOnWeek(""topic1"", ""body1"", round: 1, ""0:08:00:00"")`
 			}
 			if (val == 'RunOnMonth') {
 				form.IntervalArgument.value = '1:08:00:00'
 				tips = `
-//每月1日 08:00:00 触发，指定utc时间，执行12次
+//每月1日 08:00:00 触发，执行12次（注意时区）
 var id = scheduler.AddTaskRunOnMonth(""topic1"", ""body1"", round: 12, ""1:08:00:00"")
 
-//每月最后一日 08:00:00 触发，指定utc时间，执行12次
+//每月最后一日 08:00:00 触发，执行12次
 var id = scheduler.AddTaskRunOnMonth(""topic1"", ""body1"", round: 12, ""-1:08:00:00"")`
 			}
 			if (val == 'Custom') {

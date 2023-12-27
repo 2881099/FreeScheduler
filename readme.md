@@ -27,6 +27,7 @@ static Scheduler scheduler = new FreeSchedulerBuilder()
 | Method | 说明 |
 | -- | -- |
 | OnExecuting(Action\<TaskInfo\> executing) | 任务触发 |
+| UseTimeZone() | 设置时区 |
 | UseStorage() | 基于 数据库或者 Redis 持久化 |
 | UseCluster() | 开启集群（依赖 Redis），支持跨进程互通 |
 | UseCustomInterval() | 自定义间隔（可实现 cron） |
@@ -76,15 +77,15 @@ var id = scheduler.AddTask("topic1", "body1", round: -1, 5);
 //每次 不同的间隔秒数触发，执行6次
 var id = scheduler.AddTask("topic1", "body1", new [] { 5, 5, 10, 10, 60, 60 });
 
-//每天 20:00:00 触发，指定utc时间，执行N次
+//每天 20:00:00 触发，执行N次（注意设置时区 UseTimeZone）
 var id = scheduler.AddTaskRunOnDay("topic1", "body1", round: -1, "20:00:00");
 
-//每周一 20:00:00 触发，指定utc时间，执行1次
+//每周一 20:00:00 触发，执行1次
 var id = scheduler.AddTaskRunOnWeek("topic1", "body1", round: 1, "1:20:00:00");
 
-//每月1日 20:00:00 触发，指定utc时间，执行12次
+//每月1日 20:00:00 触发，执行12次
 var id = scheduler.AddTaskRunOnMonth("topic1", "body1", round: 12, "1:20:00:00");
-//每月最后一日 20:00:00 触发，指定utc时间，执行12次
+//每月最后一日 20:00:00 触发，执行12次
 var id = scheduler.AddTaskRunOnMonth("topic1", "body1", round: 12, "-1:20:00:00");
 
 //自定义间隔 cron
@@ -105,9 +106,9 @@ new FreeSchedulerBuilder()
 | void ctor(ITaskHandler) | 指定任务调度器（单例） |
 | string AddTask(string topic, string body, int round, int seconds) | 创建循环定时任务，返回 id |
 | string AddTask(string topic, string body, int[] seconds) | 创建每轮间隔不同的定时任务，返回 id |
-| string AddTaskRunOnDay(..) | 创建每日循环任务，指定utc时间，返回 id |
-| string AddTaskRunOnWeek(..) | 创建每周循环任务，指定utc时间，返回 id |
-| string AddTaskRunOnMonth(..) | 创建每月循环任务，指定utc时间，返回 id |
+| string AddTaskRunOnDay(..) | 创建每日循环任务，返回 id |
+| string AddTaskRunOnWeek(..) | 创建每周循环任务，返回 id |
+| string AddTaskRunOnMonth(..) | 创建每月循环任务，返回 id |
 | string AddTaskCustom(string topic, string body, string expression) | 创建自定义任务，返回 id |
 | bool RemoveTask(string id) | 删除任务 |
 | bool ExistsTask(string id) | 判断任务是否存在 |

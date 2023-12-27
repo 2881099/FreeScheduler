@@ -253,6 +253,11 @@
             扫描线程间隔（默认值：200毫秒）
             </summary>
         </member>
+        <member name="P:FreeScheduler.Scheduler.TimeOffset">
+            <summary>
+            时区
+            </summary>
+        </member>
         <member name="M:FreeScheduler.Scheduler.AddTempTask(System.TimeSpan,System.Action)">
             <summary>
             临时任务（程序重启会丢失）
@@ -380,6 +385,14 @@
             <summary>
             任务触发
             </summary>
+            <returns></returns>
+        </member>
+        <member name="M:FreeSchedulerBuilder.UseTimeZone(System.TimeSpan)">
+            <summary>
+            设置时区（默认UTC时区）<para></para>
+            北京 -> TimeSpan.FromHours(8)
+            </summary>
+            <param name="timeOffset"></param>
             <returns></returns>
         </member>
         <member name="M:FreeSchedulerBuilder.UseStorage(IFreeSql)">

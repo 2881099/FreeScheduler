@@ -30,8 +30,9 @@ namespace FreeScheduler
             topic = topic?.Trim();
             if (GetPageExtend != null) return GetPageExtend(scheduler, clusterId, topic, status, betweenTime, endTime, limit, page);
 			var result = new ResultGetPage();
-            result.Timestamp = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
-            result.Description = $"集群: {(scheduler.ClusterId == null ? "否" : $"是, 名称: {(string.IsNullOrWhiteSpace(scheduler.ClusterOptions.Name) ? scheduler.ClusterId : scheduler.ClusterOptions.Name)}")}";
+            result.Timestamp = Scheduler.GetJsTime();
+            var timezone = $"{(scheduler.TimeOffset >= TimeSpan.Zero ? "+" : "-")}{scheduler.TimeOffset.Hours.ToString().PadLeft(2, '0')}:{scheduler.TimeOffset.Minutes.ToString().PadLeft(2, '0')}";
+            result.Description = $"时区: {timezone}, 集群: {(scheduler.ClusterId == null ? "否" : $"是, 名称: {(string.IsNullOrWhiteSpace(scheduler.ClusterOptions.Name) ? scheduler.ClusterId : scheduler.ClusterOptions.Name)}")}";
             if (scheduler._taskHandler is FreeSqlHandler) result.Description += $", 存储: FreeSql";
             else if (scheduler._taskHandler is FreeRedisHandler) result.Description += $", 存储: Redis";
             else if (scheduler._taskHandler is TestHandler) result.Description += $", 存储: Memory";
@@ -70,7 +71,7 @@ namespace FreeScheduler
                             .Where(a => taskIds.Contains(a.Id))
                             .OrderByDescending(a => a.Id)
                             .ToList()
-						    .Where(a => string.IsNullOrWhiteSpace(topic) == false || a.Topic == topic)
+						    .Where(a => string.IsNullOrWhiteSpace(topic) || a.Topic == topic)
 							.Where(a => status == null || a.Status == status)
                             .Where(a => (betweenTime == null || a.CreateTime > betweenTime) && (endTime == null || a.CreateTime <= endTime))
                             .ToList();
@@ -78,7 +79,7 @@ namespace FreeScheduler
                     else if (scheduler._taskHandler is FreeRedisHandler redisHandler)
                     {
                         result.Tasks = redisHandler._redis.HMGet<TaskInfo>("FreeScheduler_hset", taskIds)
-						    .Where(a => string.IsNullOrWhiteSpace(topic) == false || a.Topic == topic)
+						    .Where(a => string.IsNullOrWhiteSpace(topic) || a.Topic == topic)
 							.Where(a => status == null || a.Status == status)
                             .Where(a => (betweenTime == null || a.CreateTime > betweenTime) && (endTime == null || a.CreateTime <= endTime))
                             .ToList();
@@ -159,7 +160,7 @@ namespace FreeScheduler
             if (scheduler._taskHandler is FreeSqlHandler fsqlHandler)
             {
                 var fsql = fsqlHandler._fsql;
-                var time1 = DateTime.UtcNow.AddSeconds(-reserveSeconds);
+                var time1 = scheduler.GetDateTime().AddSeconds(-reserveSeconds);
                 var taskIds = fsql.Select<TaskInfo>().Where(a => a.Status == TaskStatus.Completed && a.LastRunTime < time1).ToList(a => a.Id);
                 if (taskIds.Any())
                 {
@@ -174,8 +175,7 @@ namespace FreeScheduler
             else if (scheduler._taskHandler is FreeRedisHandler redisHandler)
             {
                 var redis = redisHandler._redis;
-                var _2020 = new DateTime(2020, 1, 1);
-                var taskScore = (decimal)DateTime.UtcNow.AddSeconds(-reserveSeconds).Subtract(_2020).TotalSeconds;
+                var taskScore = (decimal)scheduler.GetDateTime().AddSeconds(-reserveSeconds).Subtract(_2020).TotalSeconds;
                 var taskIds = redis.ZRangeByScore($"FreeScheduler_zset_{TaskStatus.Completed}", 0, taskScore);
                 if (taskIds.Any())
                 {
@@ -230,7 +230,7 @@ namespace FreeScheduler
             if (scheduler._clusterContext != null)
             {
                 var redis = scheduler._clusterContext._redis;
-                var timestamp = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
+                var timestamp = Scheduler.GetJsTime();
                 foreach (var scan in redis.HScan($"{scheduler.ClusterOptions.RedisPrefix}_offline", "*", 100))
                 {
                     var fields = scan.Where(a => int.TryParse(a.Value ?? "", out var tryint) && timestamp - tryint > 86400).Select(a => a.Key).ToArray();
@@ -300,7 +300,7 @@ namespace FreeScheduler
                 var cols = a.Split(new[] { "|" }, 4, StringSplitOptions.None);
                 return new ClusterLog
                 {
-                    CreateTime = new DateTime(1970, 1, 1).AddSeconds(int.TryParse(cols[0], out var tryint) ? tryint : 0),
+                    CreateTime = new DateTime(1970, 1, 1).Add(scheduler.TimeOffset).AddSeconds(int.TryParse(cols[0], out var tryint) ? tryint : 0),
                     ClusterId = cols[1],
                     ClusterName = cols[2],
                     Message = cols[3],
