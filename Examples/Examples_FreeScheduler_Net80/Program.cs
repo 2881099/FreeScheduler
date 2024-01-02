@@ -26,12 +26,12 @@ Scheduler scheduler = new FreeSchedulerBuilder()
     })
     .UseTimeZone(TimeSpan.FromHours(8))
     .UseStorage(fsql)
-    .UseCluster(redis, new ClusterOptions
-    {
-        Name = Environment.GetCommandLineArgs().FirstOrDefault(a => a.StartsWith("--name="))?.Substring(7),
-        HeartbeatInterval = 2,
-        OfflineSeconds = 5,
-    })
+    //.UseCluster(redis, new ClusterOptions
+    //{
+    //    Name = Environment.GetCommandLineArgs().FirstOrDefault(a => a.StartsWith("--name="))?.Substring(7),
+    //    HeartbeatInterval = 2,
+    //    OfflineSeconds = 5,
+    //})
     .Build();
 if (Datafeed.GetPage(scheduler).Total == 0)
 {

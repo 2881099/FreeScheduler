@@ -219,6 +219,7 @@ if (sb.length > 0) $('#dto_list').html(sb);
 						<th scope=""col"">Body</th>
 						<th scope=""col"">创建时间</th>
 						<th scope=""col"">最后运行时间</th>
+						<th scope=""col"">下次运行时间</th>
 						<th scope=""col"">错次数</th>
 					</tr>
 					<tbody id=dto_list>
@@ -275,6 +276,7 @@ for (var a = 0; a < dto.Tasks.length; a++) {
 	if (dto.Description.indexOf('存储: Memory') == -1) return '<a href=""../TaskLog/?taskId=' + task.Id + '"">' + task.LastRunTime + '</a>';
 	return task.LastRunTime;
 })() + '</td>\
+								<td>' + dto.NextTimes[a] + '</td>\
 								<td>' + task.ErrorTimes + '</td>\
                             </tr>');
 }
