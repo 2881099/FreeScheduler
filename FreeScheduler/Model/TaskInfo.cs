@@ -129,8 +129,15 @@ namespace FreeScheduler
 							curt = new DateTime(now.Year, now.Month, 1).AddHours(hh).AddMinutes(mm).AddSeconds(ss);
 							if (int.TryParse(ddhhmmss[0], out dd))
 							{
-								if (dd < 0) curt = curt.AddMonths(1);
-								curt = curt.AddDays(dd);
+								if (dd < 0)
+								{
+									curt = curt.AddMonths(1);
+									curt = curt.AddDays(dd);
+								}
+								if (dd > 0)
+								{
+									curt = curt.AddDays(dd - 1);
+								}
 							}
 							ts = curt.Subtract(now);
 							while (!(ts.TotalMilliseconds > 0))
