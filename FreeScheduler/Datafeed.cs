@@ -26,25 +26,27 @@ namespace FreeScheduler
                 public int TaskCount { get; set; }
             }
 
-            internal void RefershNextTimes(DateTime now)
+            internal ResultGetPage RefershNextTimes(Scheduler scheduler)
             {
+                var now = scheduler.GetDateTime();
 				NextTimes = Tasks?.Select(t =>
 				{
-					var interval = t.GetInterval(now, t.CurrentRound);
+                    TimeSpan? interval = null;
+                    if (t.Interval == TaskInterval.Custom)
+                        interval = scheduler._taskIntervalCustomHandler?.NextDelay(t);
+                    else
+                        interval = t.GetInterval(now, t.CurrentRound);
 					return interval != null ? now.Add(interval.Value) : (DateTime?)null;
 				}).ToList();
+                return this;
 			}
 		}
 		public static Func<Scheduler, string, string, TaskStatus?, DateTime?, DateTime?, int, int, ResultGetPage> GetPageExtend;
 		public static ResultGetPage GetPage(Scheduler scheduler, string clusterId = null, string topic = null, TaskStatus? status = null, DateTime? betweenTime = null, DateTime? endTime = null, int limit = 20, int page = 1)
 		{
             topic = topic?.Trim();
-            if (GetPageExtend != null)
-            {
-                var result2 = GetPageExtend(scheduler, clusterId, topic, status, betweenTime, endTime, limit, page);
-                result2.RefershNextTimes(scheduler.GetDateTime());
-                return result2;
-			}
+            if (GetPageExtend != null) return GetPageExtend(scheduler, clusterId, topic, status, betweenTime, endTime, limit, page).RefershNextTimes(scheduler);
+
 			var result = new ResultGetPage();
             result.Timestamp = Scheduler.GetJsTime();
             var timezone = $"{(scheduler.TimeOffset >= TimeSpan.Zero ? "+" : "-")}{scheduler.TimeOffset.Hours.ToString().PadLeft(2, '0')}:{scheduler.TimeOffset.Minutes.ToString().PadLeft(2, '0')}";
@@ -141,9 +143,8 @@ namespace FreeScheduler
                     result.Tasks = queryTasks.OrderByDescending(a => a.Id).Skip(Math.Max(0, page - 1) * limit).Take(limit).ToList();
                 }
             }
-			result.RefershNextTimes(scheduler.GetDateTime());
-			return result;
-        }
+			return result.RefershNextTimes(scheduler);
+		}
         static readonly DateTime _2020 = new DateTime(2020, 1, 1);
         public static string AddTask(Scheduler scheduler, string topic, string body, int round, TaskInterval interval, string argument)
         {
