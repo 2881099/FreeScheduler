@@ -56,7 +56,8 @@ namespace FreeScheduler.TaskHandlers
                 _fsql.Delete<TaskInfo>().Where(a => a.Id == task.Id).ExecuteAffrows();
             });
         }
-        public void OnExecuted(Scheduler scheduler, TaskInfo task, TaskLog result)
+		public virtual void OnExecutedExt(TaskInfo task, TaskLog result) { }
+		public void OnExecuted(Scheduler scheduler, TaskInfo task, TaskLog result)
         {
             try
             {
@@ -67,6 +68,7 @@ namespace FreeScheduler.TaskHandlers
                         .ExecuteAffrows();
                     _fsql.Insert<TaskLog>().NoneParameter().AppendData(result).ExecuteAffrows();
                 });
+                OnExecutedExt(task, result);
             }
             catch (Exception ex)
             {

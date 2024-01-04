@@ -387,6 +387,12 @@
             </summary>
             <returns></returns>
         </member>
+        <member name="M:FreeSchedulerBuilder.OnExecuted(System.Action{FreeScheduler.TaskInfo,FreeScheduler.TaskLog})">
+            <summary>
+            任务触发之后
+            </summary>
+            <returns></returns>
+        </member>
         <member name="M:FreeSchedulerBuilder.UseTimeZone(System.TimeSpan)">
             <summary>
             设置时区（默认UTC时区）<para></para>

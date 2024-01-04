@@ -24,9 +24,18 @@ namespace FreeScheduler.TaskHandlers
             _memoryTasks.TryRemove(task.Id, out var _);
         }
 
+		public virtual void OnExecutedExt(TaskInfo task, TaskLog result) { }
         public virtual void OnExecuted(Scheduler scheduler, TaskInfo task, TaskLog result)
         {
             if (task.Status == TaskStatus.Completed) OnRemove(task);
+            try
+            {
+                OnExecutedExt(task, result);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[{DateTime.Now.ToString("HH:mm:ss")}] {task.Topic} TestHandler.OnExecuted 错误：{ex.Message}");
+            }
         }
 
         public virtual void OnExecuting(Scheduler scheduler, TaskInfo task)

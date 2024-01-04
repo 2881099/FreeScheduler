@@ -63,7 +63,9 @@ namespace FreeScheduler.TaskHandlers
                 pipe.EndPipe();
             }
         }
-        public void OnExecuted(Scheduler scheduler, TaskInfo task, TaskLog result)
+
+        public virtual void OnExecutedExt(TaskInfo task, TaskLog result) { }
+		public void OnExecuted(Scheduler scheduler, TaskInfo task, TaskLog result)
         {
             try
             {
@@ -91,6 +93,7 @@ namespace FreeScheduler.TaskHandlers
                     pipe.ZAdd("FreeScheduler_zset_log_all", resultScore, resultMember);
                     pipe.EndPipe();
                 }
+                OnExecutedExt(task, result);
             }
             catch (Exception ex)
             {

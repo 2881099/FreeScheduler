@@ -11,7 +11,8 @@ using System.Reflection;
 public class FreeSchedulerBuilder
 {
     Action<TaskInfo> _executing;
-    IFreeSql _fsql;
+    Action<TaskInfo, TaskLog> _executed;
+	IFreeSql _fsql;
     RedisClient _redis;
     RedisClient _clusterRedis;
     ClusterOptions _clusterOptions;
@@ -28,6 +29,15 @@ public class FreeSchedulerBuilder
         _executing = executing;
         return this;
     }
+    /// <summary>
+    /// 任务触发之后
+    /// </summary>
+    /// <returns></returns>
+    public FreeSchedulerBuilder OnExecuted(Action<TaskInfo, TaskLog> executed)
+    {
+		_executed = executed;
+        return this;
+	}
     /// <summary>
     /// 设置时区（默认UTC时区）<para></para>
     /// 北京 -> TimeSpan.FromHours(8)
@@ -101,12 +111,12 @@ public class FreeSchedulerBuilder
     public Scheduler Build()
     {
         ITaskHandler taskHandler = null;
-        if (_fsql != null) taskHandler = new FreeSqlTaskHandler(_fsql) { Executing = _executing };
-        else if (_redis != null) taskHandler = new FreeRedisTaskHandler(_redis) { Executing = _executing };
+        if (_fsql != null) taskHandler = new FreeSqlTaskHandler(_fsql) { Executing = _executing, Executed = _executed };
+        else if (_redis != null) taskHandler = new FreeRedisTaskHandler(_redis) { Executing = _executing, Executed = _executed };
         else
         {
             if (_clusterRedis != null) throw new Exception($"UseCluster 集群功能仅支持 UseStorage 持久化");
-            taskHandler = new MemoryTaskHandler() { Executing = _executing };
+            taskHandler = new MemoryTaskHandler() { Executing = _executing, Executed = _executed };
         }
         var scheduler = new Scheduler(taskHandler, _customIntervalHandler, 
             _clusterRedis != null ? new ClusterContext(_clusterRedis, _clusterOptions) : null,
@@ -127,23 +137,34 @@ public class FreeSchedulerBuilder
     class MemoryTaskHandler : TestHandler
     {
         public Action<TaskInfo> Executing;
-        public override void OnExecuting(Scheduler scheduler, TaskInfo task)
-        {
-            Executing?.Invoke(task);
-        }
-    }
+		public Action<TaskInfo, TaskLog> Executed;
+		public override void OnExecuting(Scheduler scheduler, TaskInfo task)
+		{
+			FreeSqlTaskHandler.SystemExecuting(scheduler, task);
+			Executing?.Invoke(task);
+		}
+		public override void OnExecutedExt(TaskInfo task, TaskLog result)
+		{
+			Executed?.Invoke(task, result);
+		}
+	}
     class FreeSqlTaskHandler : FreeSqlHandler
     {
         public FreeSqlTaskHandler(IFreeSql fsql) : base(fsql) { }
         public Action<TaskInfo> Executing;
+		public Action<TaskInfo, TaskLog> Executed;
 
-        public override void OnExecuting(Scheduler scheduler, TaskInfo task)
+		public override void OnExecuting(Scheduler scheduler, TaskInfo task)
         {
             SystemExecuting(scheduler, task);
 			Executing?.Invoke(task);
-        }
+		}
+		public override void OnExecutedExt(TaskInfo task, TaskLog result)
+		{
+			Executed?.Invoke(task, result);
+		}
 
-        internal static void SystemExecuting(Scheduler scheduler, TaskInfo task)
+		internal static void SystemExecuting(Scheduler scheduler, TaskInfo task)
         {
 			switch (task.Topic)
 			{
@@ -174,11 +195,16 @@ public class FreeSchedulerBuilder
     {
         public FreeRedisTaskHandler(RedisClient redis) : base(redis) { }
         public Action<TaskInfo> Executing;
+        public Action<TaskInfo, TaskLog> Executed;
 
-        public override void OnExecuting(Scheduler scheduler, TaskInfo task)
+		public override void OnExecuting(Scheduler scheduler, TaskInfo task)
         {
 			FreeSqlTaskHandler.SystemExecuting(scheduler, task);
 			Executing?.Invoke(task);
         }
-    }
+		public override void OnExecutedExt(TaskInfo task, TaskLog result)
+		{
+            Executed?.Invoke(task, result);
+		}
+	}
 }
