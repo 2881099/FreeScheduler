@@ -276,7 +276,7 @@ for (var a = 0; a < dto.Tasks.length; a++) {
 	if (dto.Description.indexOf('存储: Memory') == -1) return '<a href=""../TaskLog/?taskId=' + task.Id + '"">' + task.LastRunTime + '</a>';
 	return task.LastRunTime;
 })() + '</td>\
-								<td>' + dto.NextTimes[a] + '</td>\
+								<td>' + (dto.NextTimes[a] == null ? '' : dto.NextTimes[a]) + '</td>\
 								<td>' + task.ErrorTimes + '</td>\
                             </tr>');
 }

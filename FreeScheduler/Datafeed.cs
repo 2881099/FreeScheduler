@@ -31,6 +31,7 @@ namespace FreeScheduler
                 var now = scheduler.GetDateTime();
 				NextTimes = Tasks?.Select(t =>
 				{
+                    if (t.Status == TaskStatus.Completed) return null;
                     TimeSpan? interval = null;
                     if (t.Interval == TaskInterval.Custom)
                         interval = scheduler._taskIntervalCustomHandler?.NextDelay(t);
@@ -136,7 +137,7 @@ namespace FreeScheduler
                 else if (scheduler._taskHandler is TestHandler testHandler)
                 {
                     var queryTasks = testHandler._memoryTasks.Values
-						.Where(a => string.IsNullOrWhiteSpace(topic) == false || a.Topic == topic)
+						.Where(a => string.IsNullOrWhiteSpace(topic) || a.Topic == topic)
 						.Where(a => status == null || a.Status == status.Value)
                         .Where(a => (betweenTime == null || a.CreateTime > betweenTime) && (endTime == null || a.CreateTime <= endTime));
                     result.Total = queryTasks.Count();
