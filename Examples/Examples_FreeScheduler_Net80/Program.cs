@@ -1,6 +1,8 @@
 using FreeRedis;
 using FreeScheduler;
+using FreeSql.DataAnnotations;
 using Newtonsoft.Json;
+using System.ComponentModel.DataAnnotations;
 
 var fsql = new FreeSql.FreeSqlBuilder()
     .UseConnectionString(FreeSql.DataType.Sqlite, @"Data Source=test1.db;Pooling=true")
@@ -8,6 +10,12 @@ var fsql = new FreeSql.FreeSqlBuilder()
     .UseNoneCommandParameter(true)
     .UseMonitorCommand(cmd => Console.WriteLine(cmd.CommandText + "\r\n"))
     .Build();
+
+var repo = fsql.GetRepository<RoleUserEntity>();
+repo.InsertOrUpdate(new RoleUserEntity { RoleId = 1, UserId = 1 });
+
+repo = fsql.GetRepository<RoleUserEntity>();
+repo.InsertOrUpdate(new RoleUserEntity { RoleId = 1, UserId = 1 });
 
 var redis = new RedisClient("127.0.0.1,poolsize=10,exitAutoDisposePool=false");
 redis.Serialize = obj => JsonConvert.SerializeObject(obj);
@@ -63,3 +71,11 @@ applicationLifeTime.ApplicationStopping.Register(() =>
 app.UseFreeSchedulerUI("/freescheduler/");
 
 app.Run();
+
+public class RoleUserEntity
+{
+    [Key]
+    public long RoleId { get; set; }
+    [Key]
+    public long UserId { get; set; }
+}

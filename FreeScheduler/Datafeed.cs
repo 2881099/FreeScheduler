@@ -146,6 +146,21 @@ namespace FreeScheduler
             }
 			return result.RefershNextTimes(scheduler);
 		}
+
+        public static TaskInfo GetTask(Scheduler scheduler, string id)
+        {
+            if (scheduler._taskHandler is FreeSqlHandler fsqlHandler)
+                return fsqlHandler._fsql.Select<TaskInfo>().Where(a => a.Id == id).First();
+
+            else if (scheduler._taskHandler is FreeRedisHandler redisHandler)
+                return redisHandler._redis.HGet<TaskInfo>("FreeScheduler_hset", id);
+
+            else if (scheduler._taskHandler is TestHandler testHandler)
+                return testHandler._memoryTasks.Values.Where(a => a.Id == id).FirstOrDefault();
+
+            return null;
+        }
+
         static readonly DateTime _2020 = new DateTime(2020, 1, 1);
         public static string AddTask(Scheduler scheduler, string topic, string body, int round, TaskInterval interval, string argument)
         {

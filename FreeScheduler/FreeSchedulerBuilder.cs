@@ -172,23 +172,24 @@ public class FreeSchedulerBuilder
 					var affrows = Datafeed.CleanStorageData(scheduler, (int)uint.Parse(task.Body) + 1);
 					task.Remark($"已清理 {affrows} 条数据");
 					break;
-                case "[系统预留]Http请求":
-                    var httpArgs = JToken.Parse(task.Body);
-                    using (var http = new TcpClientHttpRequest())
-                    {
-                        http.Method = httpArgs["method"]?.ToString();
-                        http.Action = httpArgs["url"]?.ToString();
-                        if (httpArgs["header"]?.Type == JTokenType.Object)
-                        {
-                            foreach(var head in ((JObject)httpArgs["header"]).Properties())
-                                http.Headers[head.Name] = head.Value?.ToString();
-						}
-                        http.Send(httpArgs["body"]?.ToString());
-                        if (http.Response.ContentType.Contains("text/json")) task.Remark(http.Response.StatusCode.ToString() + " " + http.Response.Xml);
-                        else task.Remark(http.Response.StatusCode.ToString());
-					}
-                    break;
 			}
+            if (task.Topic?.StartsWith("[系统预留]Http请求") == true)
+            {
+                var httpArgs = JToken.Parse(task.Body);
+                using (var http = new TcpClientHttpRequest())
+                {
+                    http.Method = httpArgs["method"]?.ToString();
+                    http.Action = httpArgs["url"]?.ToString();
+                    if (httpArgs["header"]?.Type == JTokenType.Object)
+                    {
+                        foreach (var head in ((JObject)httpArgs["header"]).Properties())
+                            http.Headers[head.Name] = head.Value?.ToString();
+                    }
+                    http.Send(httpArgs["body"]?.ToString());
+                    if (http.Response.ContentType.Contains("text/json")) task.Remark(http.Response.StatusCode.ToString() + " " + http.Response.Xml);
+                    else task.Remark(http.Response.StatusCode.ToString());
+                }
+            }
 		}
     }
     class FreeRedisTaskHandler : FreeRedisHandler
