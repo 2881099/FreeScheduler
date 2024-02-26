@@ -24,6 +24,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Examples_FreeScheduler_Net8
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Examples_FreeScheduler_Net80_aot", "Examples\Examples_FreeScheduler_Net80_aot\Examples_FreeScheduler_Net80_aot.csproj", "{A8A67720-B505-4D2F-81EA-008C30794D63}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FreeScheduler.Login", "FreeScheduler.Login\FreeScheduler.Login.csproj", "{4124CDEF-FC25-4BC6-9757-4D54CB2120F5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -58,6 +60,10 @@ Global
 		{A8A67720-B505-4D2F-81EA-008C30794D63}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A8A67720-B505-4D2F-81EA-008C30794D63}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A8A67720-B505-4D2F-81EA-008C30794D63}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4124CDEF-FC25-4BC6-9757-4D54CB2120F5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4124CDEF-FC25-4BC6-9757-4D54CB2120F5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4124CDEF-FC25-4BC6-9757-4D54CB2120F5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4124CDEF-FC25-4BC6-9757-4D54CB2120F5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

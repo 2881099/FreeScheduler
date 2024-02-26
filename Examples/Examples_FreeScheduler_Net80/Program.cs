@@ -1,7 +1,7 @@
 using FreeRedis;
 using FreeScheduler;
-using FreeScheduler.Model;
-using FreeSql.DataAnnotations;
+using FreeScheduler.Login.Dashboard;
+using FreeScheduler.Login.Model;
 using Newtonsoft.Json;
 using System.ComponentModel.DataAnnotations;
 

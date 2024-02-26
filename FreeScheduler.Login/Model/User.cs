@@ -1,6 +1,6 @@
 ﻿using FreeSql.DataAnnotations;
 
-namespace FreeScheduler.Model
+namespace FreeScheduler.Login.Model
 {
     /// <summary>
     /// 用户
