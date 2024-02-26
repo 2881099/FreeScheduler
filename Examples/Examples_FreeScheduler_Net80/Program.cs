@@ -1,5 +1,6 @@
 using FreeRedis;
 using FreeScheduler;
+using FreeScheduler.Model;
 using FreeSql.DataAnnotations;
 using Newtonsoft.Json;
 using System.ComponentModel.DataAnnotations;
@@ -12,6 +13,9 @@ var fsql = new FreeSql.FreeSqlBuilder()
     .Build();
 
 var repo = fsql.GetRepository<RoleUserEntity>();
+var user = fsql.GetRepository<User>();
+user.InsertOrUpdate(new User { UserName = "admin", Pwd = "123456" });
+
 repo.InsertOrUpdate(new RoleUserEntity { RoleId = 1, UserId = 1 });
 
 repo = fsql.GetRepository<RoleUserEntity>();
@@ -23,7 +27,7 @@ redis.Deserialize = (json, type) => JsonConvert.DeserializeObject(json, type);
 redis.Notice += (s, e) =>
 {
     if (e.Exception != null)
-    Console.WriteLine(e.Log);
+        Console.WriteLine(e.Log);
 };
 //redis.FlushDb();
 Scheduler scheduler = new FreeSchedulerBuilder()
@@ -57,9 +61,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton(fsql);
 builder.Services.AddSingleton(redis);
 builder.Services.AddSingleton(scheduler);
+builder.Services.AddLogin();
 
 var app = builder.Build();
-
 var applicationLifeTime = app.Services.GetService<IHostApplicationLifetime>();
 applicationLifeTime.ApplicationStopping.Register(() =>
 {
@@ -68,6 +72,7 @@ applicationLifeTime.ApplicationStopping.Register(() =>
     fsql.Dispose();
 });
 
+app.UseFreeSchedulerLoginUI("/freescheduler/");
 app.UseFreeSchedulerUI("/freescheduler/");
 
 app.Run();

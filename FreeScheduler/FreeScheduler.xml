@@ -233,6 +233,21 @@
             完成
             </summary>
         </member>
+        <member name="T:FreeScheduler.Model.User">
+            <summary>
+            用户
+            </summary>
+        </member>
+        <member name="P:FreeScheduler.Model.User.UserName">
+            <summary>
+            UserName
+            </summary>
+        </member>
+        <member name="P:FreeScheduler.Model.User.Pwd">
+            <summary>
+            Pwd
+            </summary>
+        </member>
         <member name="T:FreeScheduler.Scheduler">
             <summary>
             调度管理临时任务(一次性)、循环任务(存储落地)
