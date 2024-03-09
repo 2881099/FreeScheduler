@@ -3,6 +3,7 @@ using FreeScheduler;
 using FreeSql.DataAnnotations;
 using Newtonsoft.Json;
 using System.ComponentModel.DataAnnotations;
+using System.Reflection;
 
 var fsql = new FreeSql.FreeSqlBuilder()
     .UseConnectionString(FreeSql.DataType.Sqlite, @"Data Source=test1.db;Pooling=true")
@@ -11,11 +12,15 @@ var fsql = new FreeSql.FreeSqlBuilder()
     .UseMonitorCommand(cmd => Console.WriteLine(cmd.CommandText + "\r\n"))
     .Build();
 
+var roleUser = new RoleUserEntity { RoleId = Guid.NewGuid(), UserId = Guid.NewGuid() };
 var repo = fsql.GetRepository<RoleUserEntity>();
-repo.InsertOrUpdate(new RoleUserEntity { RoleId = 1, UserId = 1 });
+repo.InsertOrUpdate(roleUser);
+
 
 repo = fsql.GetRepository<RoleUserEntity>();
-repo.InsertOrUpdate(new RoleUserEntity { RoleId = 1, UserId = 1 });
+repo.BeginEdit(new List<RoleUserEntity> { roleUser });
+roleUser.RoleId = Guid.Parse("12ae561f-e70a-4439-8b59-fd89cc66d63e");
+repo.EndEdit(new List<RoleUserEntity> { roleUser });
 
 var redis = new RedisClient("127.0.0.1,poolsize=10,exitAutoDisposePool=false");
 redis.Serialize = obj => JsonConvert.SerializeObject(obj);
@@ -75,7 +80,7 @@ app.Run();
 public class RoleUserEntity
 {
     [Key]
-    public long RoleId { get; set; }
+    public Guid RoleId { get; set; }
     [Key]
-    public long UserId { get; set; }
+    public Guid UserId { get; set; }
 }
