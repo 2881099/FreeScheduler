@@ -426,6 +426,7 @@ $('input[name=tasktpl]').change(function() {
 		form.Body.value = `{
 	""method"": ""get"",
 	""url"": ""https://freesql.net/guide/freescheduler.html"",
+	""timeout"": ""30"",
 	""header"":
 	{
 		""Content-Type"": ""application/json"",

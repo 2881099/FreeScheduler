@@ -178,6 +178,7 @@ public class FreeSchedulerBuilder
                 var httpArgs = JToken.Parse(task.Body);
                 using (var http = new TcpClientHttpRequest())
                 {
+                    http.Timeout = int.TryParse(httpArgs["timeout"]?.ToString() ?? "30", out var tryint) ? tryint : 30;
                     http.Method = httpArgs["method"]?.ToString();
                     http.Action = httpArgs["url"]?.ToString();
                     if (httpArgs["header"]?.Type == JTokenType.Object)
