@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>FreeScheduler.Login</name>
+    </assembly>
+    <members>
+        <member name="T:FreeScheduler.Login.Model.User">
+            <summary>
+            用户
+            </summary>
+        </member>
+        <member name="P:FreeScheduler.Login.Model.User.UserName">
+            <summary>
+            UserName
+            </summary>
+        </member>
+        <member name="P:FreeScheduler.Login.Model.User.Pwd">
+            <summary>
+            Pwd
+            </summary>
+        </member>
+    </members>
+</doc>

@@ -2,18 +2,14 @@
 using FreeScheduler.Dashboard;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using Newtonsoft.Json;
 using System;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Utils = FreeScheduler.Dashboard.Utils;
 
 namespace FreeScheduler
 {
     public static class FreeSchedulerUI
     {
-
         public static IApplicationBuilder UseFreeSchedulerUI(this IApplicationBuilder app, string requestPathBase)
         {
             requestPathBase = requestPathBase.ToLower();
@@ -25,8 +21,8 @@ namespace FreeScheduler
 
             app.UseFreeAdminLteStaticFiles(requestPathBase);
 
-            app.Use(async (context, next) => {
-
+            app.Use(async (context, next) =>
+            {
                 var req = context.Request;
                 var res = context.Response;
                 var location = req.Path.Value;
@@ -54,7 +50,7 @@ namespace FreeScheduler
 							<li><a href=""{requestPathBase}TaskInfo/""><i class=""fa fa-sort-amount-desc""></i>任务列表</a></li>
 							<li><a href=""{requestPathBase}TaskLog/""><i class=""fa fa-headphones""></i>任务日志</a></li>
                             {(scheduler.ClusterId == null ? "" : $"<li><a href=\"{requestPathBase}ClusterLog/\"><i class=\"fa fa-wifi\"></i>集群日志</a></li>")}
-						</ul>"));
+						</ul>").Replace(@"{0}account/logout",$"{requestPathBase}account/logout"));
                         return;
                     }
                     if (reqPath == "/favicon.ico/") return;
@@ -62,11 +58,11 @@ namespace FreeScheduler
                     {
                         if (req.Method == "POST")
                         {
-                            string taskId = Datafeed.AddTask(scheduler, 
+                            string taskId = Datafeed.AddTask(scheduler,
                                 req.Form["Topic"].FirstOrDefault(),
-                                req.Form["Body"].FirstOrDefault(), 
-                                int.Parse(req.Form["Round"].FirstOrDefault()),  
-                                Enum.Parse<TaskInterval>(req.Form["Interval"].FirstOrDefault()), 
+                                req.Form["Body"].FirstOrDefault(),
+                                int.Parse(req.Form["Round"].FirstOrDefault()),
+                                Enum.Parse<TaskInterval>(req.Form["Interval"].FirstOrDefault()),
                                 req.Form["IntervalArgument"].FirstOrDefault());
                             await Utils.Jsonp(context, new { code = 0, message = "成功", data = taskId });
                             return;
@@ -91,15 +87,15 @@ namespace FreeScheduler
                             return null;
                         })();
                         if (result == null) await Utils.Jsonp(context, new { code = 99, message = "失败" });
-                        else  await Utils.Jsonp(context, new { code = 0, message = "成功", data = result });
+                        else await Utils.Jsonp(context, new { code = 0, message = "成功", data = result });
                         return;
                     }
                     if (reqPath.StartsWith($"{requestPathBase}taskinfo"))
                     {
-                        var dto = Datafeed.GetPage(scheduler, 
+                        var dto = Datafeed.GetPage(scheduler,
                             req.Query["clusterId"].FirstOrDefault(),
-							req.Query["topic"].FirstOrDefault(),
-							Enum.TryParse(typeof(TaskStatus), req.Query["status"].FirstOrDefault(), out var trystatus) ? (TaskStatus?)trystatus : null,
+                            req.Query["topic"].FirstOrDefault(),
+                            Enum.TryParse(typeof(TaskStatus), req.Query["status"].FirstOrDefault(), out var trystatus) ? (TaskStatus?)trystatus : null,
                             DateTime.TryParse(req.Query["createtime_1"].FirstOrDefault() ?? "", out var trydt) ? (DateTime?)trydt.AddHours(-8) : null,
                             DateTime.TryParse(req.Query["createtime_2"].FirstOrDefault() ?? "", out trydt) ? (DateTime?)trydt.AddHours(-8) : null,
 
