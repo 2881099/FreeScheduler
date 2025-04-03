@@ -38,7 +38,7 @@ Scheduler scheduler = new FreeSchedulerBuilder()
         task.Remark("log..");
     })
     .UseTimeZone(TimeSpan.FromHours(8))
-    .UseStorage(fsql)
+    .UseStorage(redis)
     //.UseCluster(redis, new ClusterOptions
     //{
     //    Name = Environment.GetCommandLineArgs().FirstOrDefault(a => a.StartsWith("--name="))?.Substring(7),

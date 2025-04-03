@@ -64,7 +64,7 @@ public class FreeSchedulerBuilder
     public FreeSchedulerBuilder UseStorage(IRedisClient redis)
     {
         var prefix = redis?.GetType().GetProperty("Prefix", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(redis, new object[0]) as string;
-        if (string.IsNullOrEmpty(prefix) == false) throw new Exception($"UseStorage 不支持设置了 Prefix 前辍的 FreeRedis");
+        if (string.IsNullOrWhiteSpace(prefix) == false) throw new Exception($"UseStorage 不支持设置了 Prefix 前辍的 FreeRedis");
 
         _redis = redis as RedisClient;
         if (_redis != null) _fsql = null;
@@ -83,7 +83,7 @@ public class FreeSchedulerBuilder
     public FreeSchedulerBuilder UseCluster(IRedisClient redis, ClusterOptions options = null)
     {
         var prefix = redis?.GetType().GetProperty("Prefix", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(redis, new object[0]) as string;
-        if (string.IsNullOrEmpty(prefix) == false) throw new Exception($"由于 UseCluster 核心代码使用了较多 LuaScript，因此不支持设置 FreeRedis Prefix 前辍");
+        if (string.IsNullOrWhiteSpace(prefix) == false) throw new Exception($"由于 UseCluster 核心代码使用了较多 LuaScript，因此不支持设置 FreeRedis Prefix 前辍");
 
         _clusterRedis = redis as RedisClient;
         _clusterOptions = options;
