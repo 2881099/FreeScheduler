@@ -187,7 +187,9 @@ public class FreeSchedulerBuilder
                             http.Headers[head.Name] = head.Value?.ToString();
                     }
                     http.Send(httpArgs["body"]?.ToString());
-                    if (http.Response.ContentType.Contains("text/json")) task.Remark(http.Response.StatusCode.ToString() + " " + http.Response.Xml);
+                    if (http.Response.ContentType.Contains("text/json") || 
+                        http.Response.ContentType.Contains("application/json") ||
+                        http.ContentType.Contains("application/json")) task.Remark(http.Response.StatusCode.ToString() + " " + http.Response.Xml);
                     else task.Remark(http.Response.StatusCode.ToString());
                 }
             }
