@@ -63,10 +63,10 @@ namespace FreeScheduler
 		#endregion
 
 		[Obsolete("请使用最新的 var scheduler = new FreeSchedulerBuilder().OnExecuting(..).Build() 方式创建")]
-		public Scheduler(ITaskHandler taskHandler) : this(taskHandler, null, null, TimeSpan.Zero) { }
+		public Scheduler(ITaskHandler taskHandler) : this(taskHandler, null, null, TimeSpan.Zero, true) { }
 		[Obsolete("请使用最新的 var scheduler = new FreeSchedulerBuilder().OnExecuting(..).UseCustomInterval(..).Build() 方式创建")]
-		public Scheduler(ITaskHandler taskHandler, ITaskIntervalCustomHandler taskIntervalCustomHandler) : this(taskHandler, taskIntervalCustomHandler, null, TimeSpan.Zero) { }
-		internal Scheduler(ITaskHandler taskHandler, ITaskIntervalCustomHandler taskIntervalCustomHandler, ClusterContext culsterContext, TimeSpan timeOffset)
+		public Scheduler(ITaskHandler taskHandler, ITaskIntervalCustomHandler taskIntervalCustomHandler) : this(taskHandler, taskIntervalCustomHandler, null, TimeSpan.Zero, true) { }
+		internal Scheduler(ITaskHandler taskHandler, ITaskIntervalCustomHandler taskIntervalCustomHandler, ClusterContext culsterContext, TimeSpan timeOffset, bool loadTask)
 		{
 			if (taskHandler == null) throw new ArgumentNullException("taskHandler 参数不能为 null");
 			_taskHandler = taskHandler;
@@ -89,16 +89,17 @@ namespace FreeScheduler
                 _wq.Enqueue(() =>
                 {
                     _clusterContext.Init(this);
-                    LoadTask(1);
+                    if (loadTask) LocalLoadTask(1);
                 });
 			}
 			else
             {
-				LoadTask(1);
+                if (loadTask) LocalLoadTask(1);
             }
 
-			void LoadTask(int pageNumber)
+			void LocalLoadTask(int pageNumber)
 			{
+				if (!loadTask) return;
                 var tasks = _taskHandler.LoadAll(pageNumber, 100);
 				var tasksCount = tasks.Count();
                 foreach (var task in tasks)
@@ -107,7 +108,7 @@ namespace FreeScheduler
                     AddTaskPriv(task, false);
                 }
                 if (tasksCount < 100) return;
-                AddTempTask(TimeSpan.FromSeconds(1), () => LoadTask(pageNumber + 1), false);
+                AddTempTask(TimeSpan.FromSeconds(1), () => LocalLoadTask(pageNumber + 1), false);
             }
         }
 

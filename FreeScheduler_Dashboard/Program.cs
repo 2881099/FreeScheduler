@@ -10,7 +10,7 @@ var fsql = new FreeSql.FreeSqlBuilder()
     .UseNoneCommandParameter(true)
     .UseMonitorCommand(cmd => Console.WriteLine(cmd.CommandText + "\r\n"))
     .Build();
-
+/*
 var redis = new RedisClient("127.0.0.1,poolsize=10,exitAutoDisposePool=false");
 redis.Serialize = obj => JsonConvert.SerializeObject(obj);
 redis.Deserialize = (json, type) => JsonConvert.DeserializeObject(json, type);
@@ -19,6 +19,7 @@ redis.Notice += (s, e) =>
     if (e.Exception != null)
         Console.WriteLine(e.Log);
 };
+*/
 
 Scheduler scheduler = new FreeSchedulerBuilder()
     .OnExecuting(task =>
@@ -27,13 +28,15 @@ Scheduler scheduler = new FreeSchedulerBuilder()
 
         task.Remark("log..");
     })
-    .UseStorage(redis)
+    .UseStorage(fsql)
+/*
     .UseCluster(redis, new ClusterOptions
     {
         Name = Environment.GetCommandLineArgs().FirstOrDefault(a => a.StartsWith("--name="))?.Substring(7),
         HeartbeatInterval = 2,
         OfflineSeconds = 5,
     })
+*/
     .Build();
 if (Datafeed.GetPage(scheduler, null, null, null, null).Total == 0)
 {
@@ -52,7 +55,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSingleton(fsql);
-builder.Services.AddSingleton(redis);
+//builder.Services.AddSingleton(redis);
 builder.Services.AddSingleton(scheduler);
 var app = builder.Build();
 
@@ -60,7 +63,7 @@ var applicationLifeTime = app.Services.GetService<IHostApplicationLifetime>();
 applicationLifeTime.ApplicationStopping.Register(() =>
 {
     scheduler.Dispose();
-    redis.Dispose();
+    //redis.Dispose();
     fsql.Dispose();
 });
 
