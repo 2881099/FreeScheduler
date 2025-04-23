@@ -66,7 +66,7 @@ namespace FreeScheduler
 		public Scheduler(ITaskHandler taskHandler) : this(taskHandler, null, null, TimeSpan.Zero, true) { }
 		[Obsolete("请使用最新的 var scheduler = new FreeSchedulerBuilder().OnExecuting(..).UseCustomInterval(..).Build() 方式创建")]
 		public Scheduler(ITaskHandler taskHandler, ITaskIntervalCustomHandler taskIntervalCustomHandler) : this(taskHandler, taskIntervalCustomHandler, null, TimeSpan.Zero, true) { }
-		internal Scheduler(ITaskHandler taskHandler, ITaskIntervalCustomHandler taskIntervalCustomHandler, ClusterContext culsterContext, TimeSpan timeOffset, bool loadTask)
+		internal Scheduler(ITaskHandler taskHandler, ITaskIntervalCustomHandler taskIntervalCustomHandler, ClusterContext culsterContext, TimeSpan timeOffset, bool autoLoad)
 		{
 			if (taskHandler == null) throw new ArgumentNullException("taskHandler 参数不能为 null");
 			_taskHandler = taskHandler;
@@ -89,17 +89,17 @@ namespace FreeScheduler
                 _wq.Enqueue(() =>
                 {
                     _clusterContext.Init(this);
-                    if (loadTask) LocalLoadTask(1);
+                    if (autoLoad) LocalLoadTask(1);
                 });
 			}
 			else
             {
-                if (loadTask) LocalLoadTask(1);
+                if (autoLoad) LocalLoadTask(1);
             }
 
 			void LocalLoadTask(int pageNumber)
 			{
-				if (!loadTask) return;
+				if (!autoLoad) return;
                 var tasks = _taskHandler.LoadAll(pageNumber, 100);
 				var tasksCount = tasks.Count();
                 foreach (var task in tasks)

@@ -76,10 +76,10 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="FreeSql">
-      <Version>3.5.201</Version>
+      <Version>3.5.203</Version>
     </PackageReference>
     <PackageReference Include="FreeSql.Provider.Sqlite">
-      <Version>3.5.201</Version>
+      <Version>3.5.203</Version>
     </PackageReference>
     <PackageReference Include="Newtonsoft.Json">
       <Version>13.0.3</Version>

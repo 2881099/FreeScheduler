@@ -19,7 +19,7 @@ public class FreeSchedulerBuilder
     ITaskIntervalCustomHandler _customIntervalHandler;
     TimeSpan _scanInterval = TimeSpan.FromMilliseconds(200);
     TimeSpan _timeOffset = TimeSpan.Zero;
-    bool _loadTask = true;
+    bool _autoLoad = true;
 
     /// <summary>
     /// 任务触发
@@ -53,24 +53,24 @@ public class FreeSchedulerBuilder
     /// <summary>
     /// 基于 数据库，使用 FreeSql ORM 持久化
     /// </summary>
-    public FreeSchedulerBuilder UseStorage(IFreeSql fsql, bool loadTask = true)
+    public FreeSchedulerBuilder UseStorage(IFreeSql fsql, bool autoLoad = true)
     {
         _fsql = fsql;
         if (_fsql != null) _redis = null;
-        _loadTask = loadTask;
+        _autoLoad = autoLoad;
         return this;
     }
     /// <summary>
     /// 基于 Redis，使用 FreeRedis 持久化
     /// </summary>
-    public FreeSchedulerBuilder UseStorage(IRedisClient redis, bool loadTask = true)
+    public FreeSchedulerBuilder UseStorage(IRedisClient redis, bool autoLoad = true)
     {
         var prefix = redis?.GetType().GetProperty("Prefix", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(redis, new object[0]) as string;
         if (string.IsNullOrWhiteSpace(prefix) == false) throw new Exception($"UseStorage 不支持设置了 Prefix 前辍的 FreeRedis");
 
         _redis = redis as RedisClient;
         if (_redis != null) _fsql = null;
-        _loadTask = loadTask;
+        _autoLoad = autoLoad;
         return this;
     }
 
@@ -123,7 +123,7 @@ public class FreeSchedulerBuilder
         }
         var scheduler = new Scheduler(taskHandler, _customIntervalHandler, 
             _clusterRedis != null ? new ClusterContext(_clusterRedis, _clusterOptions) : null,
-            _timeOffset, _loadTask);
+            _timeOffset, _autoLoad);
         scheduler.ScanInterval = _scanInterval;
         if (_clusterRedis != null)
             Snowfake.Default = new Snowfake(_clusterRedis.Incr($"{scheduler.ClusterOptions.RedisPrefix}_Snowfake") % 16);

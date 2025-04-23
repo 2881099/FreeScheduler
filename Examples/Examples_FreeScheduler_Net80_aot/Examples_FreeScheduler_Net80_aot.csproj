@@ -13,9 +13,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="FreeSql.Provider.Sqlite" Version="3.5.201" />
-		<!--<PackageReference Include="FreeSql.Provider.MySqlConnector" Version="3.5.201" />
-		<PackageReference Include="FreeSql.Provider.PostgreSQL" Version="3.5.201" />
+		<PackageReference Include="FreeSql.Provider.Sqlite" Version="3.5.203" />
+		<!--<PackageReference Include="FreeSql.Provider.MySqlConnector" Version="3.5.203" />
+		<PackageReference Include="FreeSql.Provider.PostgreSQL" Version="3.5.203" />
 		<PackageReference Include="Npgsql" Version="8.0.0" />-->
 	</ItemGroup>
 

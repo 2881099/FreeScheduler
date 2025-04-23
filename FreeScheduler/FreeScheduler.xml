@@ -401,12 +401,12 @@
             <param name="timeOffset"></param>
             <returns></returns>
         </member>
-        <member name="M:FreeSchedulerBuilder.UseStorage(IFreeSql)">
+        <member name="M:FreeSchedulerBuilder.UseStorage(IFreeSql,System.Boolean)">
             <summary>
             基于 数据库，使用 FreeSql ORM 持久化
             </summary>
         </member>
-        <member name="M:FreeSchedulerBuilder.UseStorage(FreeRedis.IRedisClient)">
+        <member name="M:FreeSchedulerBuilder.UseStorage(FreeRedis.IRedisClient,System.Boolean)">
             <summary>
             基于 Redis，使用 FreeRedis 持久化
             </summary>
