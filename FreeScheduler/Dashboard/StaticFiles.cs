@@ -24,10 +24,14 @@ namespace FreeScheduler.Dashboard
 					if (_isStaticFiles == false)
 					{
 						var curPath = AppDomain.CurrentDomain.BaseDirectory;
-						var zipPath = $"{curPath}/{Guid.NewGuid()}.zip";
+                        //这里做了修改,增加了一层目录.主要是为了解决k8s中readOnlyRootFilesystem=true;
+                        var zipPath = $"{curPath}/wwwzip/{Guid.NewGuid()}.zip";
 						using (var zip = WwwrootStream())
 						{
-							using (var fs = File.Open(zipPath, FileMode.OpenOrCreate))
+							//盘算wwwzip是否存在,不存在就创建
+                            if (!Directory.Exists(System.IO.Path.GetDirectoryName(zipPath))) Directory.CreateDirectory(System.IO.Path.GetDirectoryName(zipPath));
+
+                            using (var fs = File.Open(zipPath, FileMode.OpenOrCreate))
 							{
 								zip.CopyTo(fs);
 								fs.Close();
