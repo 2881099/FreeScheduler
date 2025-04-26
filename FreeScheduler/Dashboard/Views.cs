@@ -560,6 +560,9 @@ new FreeSchedulerBuilder()
 						<li>
 							<a href=""https://www.cnblogs.com/FreeSql/gallery/image/338859.html"" target=""_blank"">微信打赏</a>
 						</li>
+						<li>
+							<a href=""{0}account/logout"">退出</a>
+						</li>
 					</ul>
 				</div>
 			</nav>
