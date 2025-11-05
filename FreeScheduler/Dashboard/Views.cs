@@ -261,6 +261,7 @@ for (var a = 0; a < dto.Tasks.length; a++) {
 	if (task.Status == 0 || task.Status == 'Running') btn += '<input type=""button"" class=""btn btn-xs btn-warning"" value=""暂停"" onclick=""top.callTask(\'pause\', \'' + task.Id + '\')"" /> ';
 	return btn + '<input type=""button"" class=""btn btn-xs btn-info"" value=""立即触发"" onclick=""top.callTask(\'run\', \'' + task.Id + '\')"" />';
 })() + '\
+<a href=""./add?tasktpl=' + task.Id + '"" class=""btn btn-xs btn-success"" style=""margin-left: 5px"">修改</a>\
 								</td>\
 								<td>' + task.Id + '</td>\
 								<td class=""text-nowrap"">' + task.Topic + '</td>\
@@ -362,6 +363,7 @@ if (sb.length > 0) $('#dto_list').html(sb);
 		<div class=""table-responsive"">
 			<form id=""form_add"" method=""post"">
 				<input type=""hidden"" name=""__callback"" value=""edit_callback"" />
+				<input type=""hidden"" name=""Id"" value="""" />
 				<div>
 					<table cellspacing=""0"" rules=""all"" class=""table table-bordered table-hover"" border=""1"" style=""border-collapse:collapse;"">
 						<tr>
@@ -446,8 +448,23 @@ $('input[name=tasktpl]').change(function() {
 	}
 });
 if (top.mainViewNav.query.tasktpl) {
-	var radio = $('input[name=tasktpl][value=' + top.mainViewNav.query.tasktpl + ']');
-	radio.click();
+    if(top.mainViewNav.query.tasktpl == '1' || top.mainViewNav.query.tasktpl == '2')
+	{
+		var radio = $('input[name=tasktpl][value=' + top.mainViewNav.query.tasktpl + ']');
+	    radio.click();
+	}
+	else
+	{
+		var dto = {};
+		var text = $('<div>').html(dto.Topic).text();
+		form.Id.value = dto.Id;
+		form.Topic.value = text;
+		form.Body.value = dto.Body;
+		form.Round.value = dto.Round;
+		var select = document.getElementById('mySelect');
+		$(""select[name='Interval']"").val(dto.Interval);
+		form.IntervalArgument.value = dto.IntervalArgument;		
+	}
 }
 
 		top.IntervalChange = function(val) {

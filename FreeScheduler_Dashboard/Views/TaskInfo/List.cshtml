@@ -47,6 +47,8 @@
 										}
 										<input type="button" class="btn btn-xs btn-info" value="立即触发" onclick="top.callTask('run', '@item.Id')" />
 									}
+									@* <input type="button" class="btn btn-xs btn-info" value="修改" onclick="window.location.href = './add?tpl=@item.Id'" /> *@
+									<a href="./add?tpl=@item.Id" class="btn btn-xs btn-success">修改</a>
 								</td>
 								<td>@item.Id</td>
 								<td>@item.Topic</td>

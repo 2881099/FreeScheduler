@@ -1,6 +1,8 @@
 ﻿using FreeRedis;
 using FreeScheduler;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 using TaskStatus = FreeScheduler.TaskStatus;
 
@@ -41,16 +43,34 @@ namespace FreeSql.FreeScheduler.Controllers
             return View();
         }
 
+        //[HttpGet("add")]
+        //public ActionResult Edit() => View();
+
         [HttpGet("add")]
-        public ActionResult Edit() => View();
+        public ActionResult Edit([FromQuery] string tpl)
+        {
+            if(tpl != "CleanStorageData")
+            {
+				var result = Datafeed.GetTask(scheduler, tpl);
+				ViewBag.dto = result;
+			}
+			
+			return View();
+		}
+
+
 
         /***************************************** POST *****************************************/
 
         [HttpPost("add")]
-        public ApiResult _Add([FromForm] string Topic, [FromForm] string Body, [FromForm] int Round, [FromForm] TaskInterval Interval, [FromForm] string IntervalArgument)
+        public ApiResult _Add([FromForm] string Id,[FromForm] string Topic, [FromForm] string Body, [FromForm] int Round, [FromForm] TaskInterval Interval, [FromForm] string IntervalArgument)
         {
-            string taskId = Datafeed.AddTask(scheduler, Topic, Body, Round, Interval, IntervalArgument);
-            return ApiResult<object>.Success.SetData(taskId);
-        }
+            if(Id !=null)
+            {
+				scheduler.RemoveTask(Id);
+			}
+			string taskId = Datafeed.AddTask(scheduler, Topic, Body, Round, Interval, IntervalArgument);
+			return ApiResult<object>.Success.SetData(taskId);
+		}
     }
 }
