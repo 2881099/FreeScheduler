@@ -131,9 +131,9 @@ namespace FreeScheduler
 							{
 								if (dd < 0)
 								{
-									curt = curt.AddMonths(1);
-									curt = curt.AddDays(dd);
-								}
+									curt = curt.AddMonths(1).AddDays(dd);
+									if (curt < now) curt = curt.AddDays(-dd).AddMonths(1).AddDays(dd);
+                                }
 								if (dd > 0)
 								{
 									curt = curt.AddDays(dd - 1);

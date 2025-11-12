@@ -39,6 +39,19 @@ namespace FreeScheduler
                 }
 
                 var reqPath = location.ToLower();
+		string requestPathBase2 = requestPathBase;
+                if (req.PathBase.HasValue)
+                {
+                    if (req.PathBase.Value.EndsWith("/"))
+                    {
+                        requestPathBase2 = $"{req.PathBase.Value.Substring(0, req.PathBase.Value.Length - 1)}{requestPathBase}";
+                    }
+                    else
+                    {
+                        requestPathBase2 = $"{req.PathBase.Value}{requestPathBase}";
+                    }
+
+                }
                 try
                 {
                     if (reqPath == requestPathBase)
@@ -51,9 +64,9 @@ namespace FreeScheduler
                         }
                         //首页
                         await res.WriteAsync(Views.Home.Replace(@"<ul class=""treeview-menu""></ul>", $@"<ul class=""treeview-menu"">
-							<li><a href=""{requestPathBase}TaskInfo/""><i class=""fa fa-sort-amount-desc""></i>任务列表</a></li>
-							<li><a href=""{requestPathBase}TaskLog/""><i class=""fa fa-headphones""></i>任务日志</a></li>
-                            {(scheduler.ClusterId == null ? "" : $"<li><a href=\"{requestPathBase}ClusterLog/\"><i class=\"fa fa-wifi\"></i>集群日志</a></li>")}
+							<li><a href=""{requestPathBase2}TaskInfo/""><i class=""fa fa-sort-amount-desc""></i>任务列表</a></li>
+							<li><a href=""{requestPathBase2}TaskLog/""><i class=""fa fa-headphones""></i>任务日志</a></li>
+                            {(scheduler.ClusterId == null ? "" : $"<li><a href=\"{requestPathBase2}ClusterLog/\"><i class=\"fa fa-wifi\"></i>集群日志</a></li>")}
 						</ul>"));
                         return;
                     }
