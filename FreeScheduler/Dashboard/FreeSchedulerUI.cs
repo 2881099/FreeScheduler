@@ -75,7 +75,13 @@ namespace FreeScheduler
                     {
                         if (req.Method == "POST")
                         {
-                            string taskId = Datafeed.AddTask(scheduler, 
+                            string Id = req.Form["Id"].FirstOrDefault();
+							if (Id != null)
+							{
+								scheduler.RemoveTask(Id);
+							}
+
+							string taskId = Datafeed.AddTask(scheduler, 
                                 req.Form["Topic"].FirstOrDefault(),
                                 req.Form["Body"].FirstOrDefault(), 
                                 int.Parse(req.Form["Round"].FirstOrDefault()),  
@@ -84,8 +90,17 @@ namespace FreeScheduler
                             await Utils.Jsonp(context, new { code = 0, message = "成功", data = taskId });
                             return;
                         }
-                        var html = Views.TaskInfo_add;
-                        await res.WriteAsync(html);
+                        
+                        var tasktpl = req.Query["tasktpl"].FirstOrDefault();
+                        if (tasktpl != null && (tasktpl != "1" && tasktpl != "2"))
+						{
+							var dto = Datafeed.GetTask(scheduler, tasktpl);
+							await res.WriteAsync(Views.TaskInfo_add.Replace("var dto = {};", "var dto = " + Utils.SerializeObject(dto)));
+							return;
+						}
+
+						var html = Views.TaskInfo_add;
+						await res.WriteAsync(html);
                         return;
                     }
                     if (reqPath.StartsWith($"{requestPathBase}taskinfo/calltask"))
