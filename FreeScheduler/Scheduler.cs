@@ -110,7 +110,7 @@ namespace FreeScheduler
                     AddTaskPriv(task, false);
                 }
                 if (tasksCount < 100) return;
-                AddTempTask(TimeSpan.FromSeconds(1), () => LocalLoadTask(pageNumber + 1), false);
+                AddTempTask(null, TimeSpan.FromSeconds(1), () => LocalLoadTask(pageNumber + 1), false);
             }
         }
 
@@ -120,10 +120,11 @@ namespace FreeScheduler
 		/// <param name="timeout"></param>
 		/// <param name="handle"></param>
 		/// <returns></returns>
-		public string AddTempTask(TimeSpan timeout, Action handle) => AddTempTask(timeout, handle, true);
-        internal string AddTempTask(TimeSpan timeout, Action handle, bool cluster)
+		public string AddTempTask(TimeSpan timeout, Action handle) => AddTempTask(null, timeout, handle, true);
+		public bool AddTempTask(string id, TimeSpan timeout, Action handle) => AddTempTask(id, timeout, handle, true) == id || string.IsNullOrWhiteSpace(id);
+        internal string AddTempTask(string id, TimeSpan timeout, Action handle, bool cluster)
         {
-            var id = Guid.NewGuid().ToString();
+            if (string.IsNullOrWhiteSpace(id)) id = Guid.NewGuid().ToString();
 			if (!cluster) id = $"system_{id}";
 			var bus = new IdleTimeout(() =>
             {
