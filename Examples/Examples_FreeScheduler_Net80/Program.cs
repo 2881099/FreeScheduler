@@ -22,14 +22,14 @@ repo.BeginEdit(new List<RoleUserEntity> { roleUser });
 roleUser.RoleId = Guid.Parse("12ae561f-e70a-4439-8b59-fd89cc66d63e");
 repo.EndEdit(new List<RoleUserEntity> { roleUser });
 
-var redis = new RedisClient("127.0.0.1,poolsize=10,exitAutoDisposePool=false");
-redis.Serialize = obj => JsonConvert.SerializeObject(obj);
-redis.Deserialize = (json, type) => JsonConvert.DeserializeObject(json, type);
-redis.Notice += (s, e) =>
-{
-    if (e.Exception != null)
-    Console.WriteLine(e.Log);
-};
+//var redis = new RedisClient("127.0.0.1,poolsize=10,exitAutoDisposePool=false");
+//redis.Serialize = obj => JsonConvert.SerializeObject(obj);
+//redis.Deserialize = (json, type) => JsonConvert.DeserializeObject(json, type);
+//redis.Notice += (s, e) =>
+//{
+//    if (e.Exception != null)
+//    Console.WriteLine(e.Log);
+//};
 //redis.FlushDb();
 Scheduler scheduler = new FreeSchedulerBuilder()
     .OnExecuting(task =>
@@ -38,7 +38,7 @@ Scheduler scheduler = new FreeSchedulerBuilder()
         task.Remark("log..");
     })
     .UseTimeZone(TimeSpan.FromHours(8))
-    .UseStorage(redis)
+    .UseStorage(fsql)
     //.UseCluster(redis, new ClusterOptions
     //{
     //    Name = Environment.GetCommandLineArgs().FirstOrDefault(a => a.StartsWith("--name="))?.Substring(7),
@@ -60,7 +60,7 @@ if (Datafeed.GetPage(scheduler).Total == 0)
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton(fsql);
-builder.Services.AddSingleton(redis);
+//builder.Services.AddSingleton(redis);
 builder.Services.AddSingleton(scheduler);
 
 var app = builder.Build();
@@ -69,7 +69,7 @@ var applicationLifeTime = app.Services.GetService<IHostApplicationLifetime>();
 applicationLifeTime.ApplicationStopping.Register(() =>
 {
     scheduler.Dispose();
-    redis.Dispose();
+    //redis.Dispose();
     fsql.Dispose();
 });
 

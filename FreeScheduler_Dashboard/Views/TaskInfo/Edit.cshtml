@@ -1,5 +1,7 @@
 ﻿@{
 	Layout = "";
+
+	var dto = ViewBag.dto as TaskInfo;
 }
 
 <div class="box">
@@ -10,6 +12,7 @@
 		<div class="table-responsive">
 			<form id="form_add" method="post">
 				<input type="hidden" name="__callback" value="edit_callback" />
+				<input type="hidden" name="Id" value="" />
 				<div>
 					<table cellspacing="0" rules="all" class="table table-bordered table-hover" border="1" style="border-collapse:collapse;">
 						<tr>
@@ -129,5 +132,22 @@ new FreeSchedulerBuilder()
 		$('#form_add #BodyLabel').html('清理多久之前的记录（单位：秒）<br>已完成的任务');
 		form.Round.value = -1;
 	})()
-</script>
+	</script>
+}else if (dto != null)
+{
+	<script>
+		(function () {
+			var text = $('<div>').html('@dto.Topic').text();
+			var form = $('#form_add')[0];
+			form.Id.value = '@dto.Id';
+			form.Topic.value = text;
+			form.Body.value = '@dto.Body';
+			$('#form_add #BodyLabel').html('清理多久之前的记录（单位：秒）<br>已完成的任务');
+			form.Round.value = @dto.Round;
+			var select = document.getElementById('mySelect');
+			$("select[name='Interval']").val('@dto.Interval');
+			//form.Interval.value = '@dto.Interval';
+			form.IntervalArgument.value = '@dto.IntervalArgument';
+		})()
+	</script>
 }

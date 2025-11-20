@@ -14,7 +14,7 @@
       "dotnetRunMessages": true,
       "launchBrowser": true,
       "launchUrl": "freescheduler",
-      "applicationUrl": "http://localhost:5240",
+      "applicationUrl": "http://localhost:52405",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
