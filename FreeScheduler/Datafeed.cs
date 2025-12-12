@@ -202,9 +202,9 @@ namespace FreeScheduler
                     {
                         affrows += fsql.Delete<TaskLog>().Where(a => taskIds.Contains(a.TaskId)).ExecuteAffrows();
                         affrows += fsql.Delete<TaskInfo>().Where(a => taskIds.Contains(a.Id)).ExecuteAffrows();
-                        affrows += fsql.Delete<TaskLog>().Where(a => a.CreateTime < time1).ExecuteAffrows();
                     });
                 }
+                affrows += fsql.Delete<TaskLog>().Where(a => a.CreateTime < time1).ExecuteAffrows();
             }
             else if (scheduler._taskHandler is FreeRedisHandler redisHandler)
             {
@@ -235,29 +235,31 @@ namespace FreeScheduler
                             }
 
                             pipe.Del($"FreeScheduler_zset_log:{taskId}");
-                            foreach (var scan in redis.ZScan($"FreeScheduler_zset_log:{taskId}", "*", 100))
-                                if (scan.Length > 0)
-                                    pipe.ZRem("FreeScheduler_zset_log_all", scan.Select(a => a.member).ToArray());
                             var ret = pipe.EndPipe();
                             affrows += int.Parse(ret[0]?.ToString());
                             for (var a = 6; a < ret.Length; a++) affrows += int.Parse(ret[a]?.ToString());
                         }
                     }
                 }
-                var logs = redis.ZRangeByScore("FreeScheduler_zset_log_all", 0, taskScore);
-                if (logs.Any())
+                int batchSize = 1000;
+                while (true)
                 {
+                    var logsBatch = redis.ZRangeByScore("FreeScheduler_zset_log_all", 0, taskScore, 0, batchSize);
+                    if (logsBatch == null || logsBatch.Length == 0) break;
+
                     using (var pipe = redis.StartPipe())
                     {
-                        pipe.ZRemRangeByScore("FreeScheduler_zset_log_all", 0, taskScore);
-                        foreach (var log in logs)
+                        foreach (var logMemberString in logsBatch)
                         {
-                            var resultMember = redis.Deserialize(log, typeof(TaskLog)) as TaskLog;
-                            if (resultMember == null) continue;
-                            pipe.ZRem($"FreeScheduler_zset_log:{resultMember.TaskId}", log);
+                            var resultMember = redis.Deserialize(logMemberString, typeof(TaskLog)) as TaskLog;
+                            if (resultMember != null)
+                                pipe.ZRem($"FreeScheduler_zset_log:{resultMember.TaskId}", logMemberString);
+                            pipe.ZRem("FreeScheduler_zset_log_all", logMemberString);
                         }
                         var ret = pipe.EndPipe();
-                        for (var a = 0; a < ret.Length; a++) affrows += int.Parse(ret[a]?.ToString());
+                        foreach (var r in ret)
+                            if (r != null && int.TryParse(r.ToString(), out int val))
+                                affrows += val;
                     }
                 }
             }
