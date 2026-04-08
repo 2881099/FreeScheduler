@@ -203,7 +203,7 @@ if(ARGV[1]-tonumber(redis.call('hget',KEYS[1],a[1]))>120)then redis.call('zrem',
             }
             finally
             {
-                _scheduler.AddTempTask(TimeSpan.FromSeconds(Options.HeartbeatInterval), HeartbeatOffline, false);
+                _scheduler.AddTempTask(null, TimeSpan.FromSeconds(Options.HeartbeatInterval), HeartbeatOffline, false);
             }
             if (timeoutResult == null) return;
             if (timeoutResult as string == "-1") //被其他进程判定离线
@@ -257,11 +257,11 @@ if(ARGV[1]-tonumber(redis.call('hget',KEYS[1],a[1]))>120)then redis.call('zrem',
                     break; //数量较多时，延迟处理
                 }
                 if (_redis.ZCard(regkey) > 0)
-                    _scheduler.AddTempTask(TimeSpan.FromMilliseconds(1_000), () => ReloadTask(tempClusterId), false);
+                    _scheduler.AddTempTask(null, TimeSpan.FromMilliseconds(1_000), () => ReloadTask(tempClusterId), false);
             }
             catch
             {
-                _scheduler.AddTempTask(TimeSpan.FromMilliseconds(30_000), () => ReloadTask(tempClusterId), false);
+                _scheduler.AddTempTask(null, TimeSpan.FromMilliseconds(30_000), () => ReloadTask(tempClusterId), false);
             }
         }
 

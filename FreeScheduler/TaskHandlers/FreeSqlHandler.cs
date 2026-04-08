@@ -66,7 +66,8 @@ namespace FreeScheduler.TaskHandlers
                     _fsql.Update<TaskInfo>().NoneParameter().SetSource(task)
                         .UpdateColumns(a => new { a.CurrentRound, a.ErrorTimes, a.LastRunTime, a.Status })
                         .ExecuteAffrows();
-                    _fsql.Insert<TaskLog>().NoneParameter().AppendData(result).ExecuteAffrows();
+                    if (scheduler._ifLog == null || scheduler._ifLog(task))
+                        _fsql.Insert<TaskLog>().NoneParameter().AppendData(result).ExecuteAffrows();
                 });
                 OnExecutedExt(task, result);
             }

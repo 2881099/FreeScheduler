@@ -40,6 +40,7 @@ namespace FreeScheduler
 		public TimeSpan TimeOffset { get; }
 		internal DateTime GetDateTime() => DateTime.UtcNow.Add(TimeOffset);
 		internal static int GetJsTime() => (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
+		internal Func<TaskInfo, bool> _ifLog = null;
 
         #region Dispose
         ~Scheduler() => Dispose();
@@ -63,10 +64,10 @@ namespace FreeScheduler
 		#endregion
 
 		[Obsolete("请使用最新的 var scheduler = new FreeSchedulerBuilder().OnExecuting(..).Build() 方式创建")]
-		public Scheduler(ITaskHandler taskHandler) : this(taskHandler, null, null, TimeSpan.Zero, true) { }
+		public Scheduler(ITaskHandler taskHandler) : this(taskHandler, null, null, TimeSpan.Zero, true, null) { }
 		[Obsolete("请使用最新的 var scheduler = new FreeSchedulerBuilder().OnExecuting(..).UseCustomInterval(..).Build() 方式创建")]
-		public Scheduler(ITaskHandler taskHandler, ITaskIntervalCustomHandler taskIntervalCustomHandler) : this(taskHandler, taskIntervalCustomHandler, null, TimeSpan.Zero, true) { }
-		internal Scheduler(ITaskHandler taskHandler, ITaskIntervalCustomHandler taskIntervalCustomHandler, ClusterContext culsterContext, TimeSpan timeOffset, bool autoLoad)
+		public Scheduler(ITaskHandler taskHandler, ITaskIntervalCustomHandler taskIntervalCustomHandler) : this(taskHandler, taskIntervalCustomHandler, null, TimeSpan.Zero, true, null) { }
+		internal Scheduler(ITaskHandler taskHandler, ITaskIntervalCustomHandler taskIntervalCustomHandler, ClusterContext culsterContext, TimeSpan timeOffset, bool autoLoad, Func<TaskInfo, bool> ifLog)
 		{
 			if (taskHandler == null) throw new ArgumentNullException("taskHandler 参数不能为 null");
 			_taskHandler = taskHandler;
@@ -83,6 +84,7 @@ namespace FreeScheduler
 			{
 			});
 			_wq = new WorkQueue(30);
+			_ifLog = ifLog;
 
 			if (_clusterContext != null)
 			{
@@ -108,7 +110,7 @@ namespace FreeScheduler
                     AddTaskPriv(task, false);
                 }
                 if (tasksCount < 100) return;
-                AddTempTask(TimeSpan.FromSeconds(1), () => LocalLoadTask(pageNumber + 1), false);
+                AddTempTask(null, TimeSpan.FromSeconds(1), () => LocalLoadTask(pageNumber + 1), false);
             }
         }
 
@@ -118,10 +120,11 @@ namespace FreeScheduler
 		/// <param name="timeout"></param>
 		/// <param name="handle"></param>
 		/// <returns></returns>
-		public string AddTempTask(TimeSpan timeout, Action handle) => AddTempTask(timeout, handle, true);
-        internal string AddTempTask(TimeSpan timeout, Action handle, bool cluster)
+		public string AddTempTask(TimeSpan timeout, Action handle) => AddTempTask(null, timeout, handle, true);
+		public bool AddTempTask(string id, TimeSpan timeout, Action handle) => AddTempTask(id, timeout, handle, true) == id || string.IsNullOrWhiteSpace(id);
+        internal string AddTempTask(string id, TimeSpan timeout, Action handle, bool cluster)
         {
-            var id = Guid.NewGuid().ToString();
+            if (string.IsNullOrWhiteSpace(id)) id = Guid.NewGuid().ToString();
 			if (!cluster) id = $"system_{id}";
 			var bus = new IdleTimeout(() =>
             {

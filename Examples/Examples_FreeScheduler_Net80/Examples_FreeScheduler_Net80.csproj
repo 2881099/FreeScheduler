@@ -7,8 +7,8 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="FreeSql.DbContext" Version="3.5.203" />
-		<PackageReference Include="FreeSql.Provider.Sqlite" Version="3.5.203" />
+		<PackageReference Include="FreeSql.DbContext" Version="3.5.303" />
+		<PackageReference Include="FreeSql.Provider.Sqlite" Version="3.5.303" />
 	</ItemGroup>
 
 	<ItemGroup>

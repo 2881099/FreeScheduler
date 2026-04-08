@@ -89,8 +89,11 @@ namespace FreeScheduler.TaskHandlers
                     pipe.ZAdd($"FreeScheduler_zset_{t.Status}", taskScore, task.Id);
                     pipe.ZAdd($"FreeScheduler_zset_q:{task.Topic}_{t.Status}", taskScore, task.Id);
 
-                    pipe.ZAdd($"FreeScheduler_zset_log:{task.Id}", resultScore, resultMember);
-                    pipe.ZAdd("FreeScheduler_zset_log_all", resultScore, resultMember);
+                    if (scheduler._ifLog == null || scheduler._ifLog(task))
+                    {
+                        pipe.ZAdd($"FreeScheduler_zset_log:{task.Id}", resultScore, resultMember);
+                        pipe.ZAdd("FreeScheduler_zset_log_all", resultScore, resultMember);
+                    }
                     pipe.EndPipe();
                 }
                 OnExecutedExt(task, result);
