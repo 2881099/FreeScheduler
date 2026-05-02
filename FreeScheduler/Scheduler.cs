@@ -14,6 +14,10 @@ namespace FreeScheduler
 		int _quantityTempTask;
 		int _quantityTask;
 		internal int _quantityTaskRunning;
+		int _persistentTaskLoadToken;
+		readonly object _persistentTaskModeLock = new object();
+		readonly ConcurrentDictionary<string, byte> _runningPersistentTasks = new ConcurrentDictionary<string, byte>();
+        PersistentTaskMode _persistentTaskMode;
         /// <summary>
         /// 临时任务数量
         /// </summary>
@@ -26,6 +30,10 @@ namespace FreeScheduler
 		/// 扫描线程间隔（默认值：200毫秒）
 		/// </summary>
 		public TimeSpan ScanInterval { get => _ib.ScanOptions.Interval; set => _ib.ScanOptions.Interval = value; }
+		/// <summary>
+		/// 持久化任务调度模式。
+		/// </summary>
+		public PersistentTaskMode PersistentTaskMode => _persistentTaskMode;
 
 		internal WorkQueue _wq;
         internal ITaskHandler _taskHandler;
@@ -85,34 +93,97 @@ namespace FreeScheduler
 			});
 			_wq = new WorkQueue(30);
 			_ifLog = ifLog;
+			_persistentTaskMode = autoLoad ? PersistentTaskMode.Active : PersistentTaskMode.Standby;
 
 			if (_clusterContext != null)
 			{
                 _wq.Enqueue(() =>
                 {
                     _clusterContext.Init(this);
-                    if (autoLoad) LocalLoadTask(1);
+					if (autoLoad) LoadPersistentTasksInternal();
                 });
 			}
 			else
             {
-                if (autoLoad) LocalLoadTask(1);
-            }
-
-			void LocalLoadTask(int pageNumber)
-			{
-				if (!autoLoad) return;
-                var tasks = _taskHandler.LoadAll(pageNumber, 100);
-				var tasksCount = tasks.Count();
-                foreach (var task in tasks)
-                {
-                    if (task.Interval == TaskInterval.Custom && taskIntervalCustomHandler == null) continue;
-                    AddTaskPriv(task, false);
-                }
-                if (tasksCount < 100) return;
-                AddTempTask(null, TimeSpan.FromSeconds(1), () => LocalLoadTask(pageNumber + 1), false);
+				if (autoLoad) LoadPersistentTasksInternal();
             }
         }
+
+		/// <summary>
+		/// 加载全部持久化任务，并切换为 Active。
+		/// </summary>
+		public PersistentTaskRuntimeState LoadPersistentTasks()
+		{
+			lock (_persistentTaskModeLock)
+				_persistentTaskMode = PersistentTaskMode.Active;
+
+			LoadPersistentTasksInternal();
+			return GetPersistentTaskRuntimeState();
+		}
+
+		/// <summary>
+		/// 开始排空持久化任务，不再接收新的自动触发。
+		/// </summary>
+		public PersistentTaskRuntimeState BeginDrainPersistentTasks()
+		{
+			lock (_persistentTaskModeLock)
+			{
+				_persistentTaskMode = PersistentTaskMode.Draining;
+				Interlocked.Increment(ref _persistentTaskLoadToken);
+			}
+
+			foreach (var taskEntry in _tasks.ToArray())
+			{
+				if (_runningPersistentTasks.ContainsKey(taskEntry.Key)) continue;
+				ReleasePersistentTask(taskEntry.Key);
+			}
+
+			return GetPersistentTaskRuntimeState();
+		}
+
+		/// <summary>
+		/// 获取持久化任务运行时状态。
+		/// </summary>
+		public PersistentTaskRuntimeState GetPersistentTaskRuntimeState()
+		{
+			return new PersistentTaskRuntimeState
+			{
+				Mode = _persistentTaskMode,
+				LoadedTaskCount = _tasks.Count,
+				RunningTaskCount = _runningPersistentTasks.Count,
+				AcceptingNewTriggers = _persistentTaskMode == PersistentTaskMode.Active
+			};
+		}
+
+		void LoadPersistentTasksInternal()
+		{
+			var loadToken = Interlocked.Increment(ref _persistentTaskLoadToken);
+			LoadPersistentTasksPage(1, loadToken);
+		}
+
+		void LoadPersistentTasksPage(int pageNumber, int loadToken)
+		{
+			if (loadToken != Volatile.Read(ref _persistentTaskLoadToken)) return;
+			if (_persistentTaskMode != PersistentTaskMode.Active) return;
+
+			var tasks = _taskHandler.LoadAll(pageNumber, 100).ToArray();
+			foreach (var task in tasks)
+			{
+				if (task.Interval == TaskInterval.Custom && _taskIntervalCustomHandler == null) continue;
+				AddTaskPriv(task, false);
+			}
+			if (tasks.Length < 100) return;
+
+			AddTempTask(null, TimeSpan.FromSeconds(1), () => LoadPersistentTasksPage(pageNumber + 1, loadToken), false);
+		}
+
+		void ReleasePersistentTask(string taskId)
+		{
+			if (_tasks.TryRemove(taskId, out var _))
+				Interlocked.Decrement(ref _quantityTask);
+			_ib.TryRemove(taskId, true);
+			_clusterContext?.Remove(taskId, nameof(AddTask));
+		}
 
 		/// <summary>
 		/// 临时任务（程序重启会丢失）
@@ -248,11 +319,18 @@ namespace FreeScheduler
 			if (task.Status != TaskStatus.Running) return;
 			if (task.Round != -1 && task.CurrentRound >= task.Round) return;
 			if (task.Interval == TaskInterval.Custom && _taskIntervalCustomHandler == null) throw new Exception($"{task.Id} Custom 未设置 {nameof(FreeSchedulerBuilder.UseCustomInterval)}");
-			if (_clusterContext != null && _clusterContext.Register(task.Id, nameof(AddTask)) == false) return;
+			if (_tasks.ContainsKey(task.Id)) return;
+			if (isSave && _persistentTaskMode != PersistentTaskMode.Active)
+			{
+				_taskHandler.OnAdd(task);
+				return;
+			}
+			if (_persistentTaskMode != PersistentTaskMode.Active) return;
 			IdleTimeout bus = null;
 			bus = new IdleTimeout(() =>
 			{
 				if (_ib.TryRemove(task.Id) == false && task.InternalFlag == 0) return;
+				if (task.InternalFlag == 0 && _persistentTaskMode != PersistentTaskMode.Active) return;
 				var currentRound = task.IncrementCurrentRound();
 				var round = task.Round;
 				if (task.Status != TaskStatus.Running) return;
@@ -271,6 +349,7 @@ namespace FreeScheduler
 						Interlocked.Decrement(ref _quantityTask);
 					return;
 				}
+				_runningPersistentTasks[task.Id] = 0;
 				_wq.Enqueue(() =>
 				{
 					Interlocked.Increment(ref _quantityTaskRunning);
@@ -311,6 +390,11 @@ namespace FreeScheduler
 							if (round != -1 && currentRound >= round) task.Status = TaskStatus.Completed;
 							_taskHandler.OnExecuted(this, task, result);
 						}
+						if (_persistentTaskMode != PersistentTaskMode.Active)
+						{
+							ReleasePersistentTask(task.Id);
+							return;
+						}
 						if (task.Status != TaskStatus.Running) return;
 						if (_tasks.ContainsKey(task.Id) == false) return;
 						if (round == -1 || currentRound < round)
@@ -322,29 +406,52 @@ namespace FreeScheduler
 					}
 					finally
 					{
+						_runningPersistentTasks.TryRemove(task.Id, out var _);
 						Interlocked.Decrement(ref _quantityTaskRunning);
 					}
 				});
 			});
 			if (_tasks.TryAdd(task.Id, task))
 			{
-				if (isSave)
+				var keepLocalTask = false;
+				var quantityIncremented = false;
+				var registered = _clusterContext == null;
+				var persisted = false;
+				try
 				{
-					try
+					if (_clusterContext != null && _clusterContext.Register(task.Id, nameof(AddTask)) == false) return;
+					registered = true;
+					if (isSave)
 					{
 						_taskHandler.OnAdd(task);
+						persisted = true;
 					}
-					catch
+					Interlocked.Increment(ref _quantityTask);
+					quantityIncremented = true;
+					var nextTimeSpan = LocalGetNextTimeSpan(task.Status, task.CurrentRound);
+					if (nextTimeSpan != null && _ib.TryRegister(task.Id, () => bus, nextTimeSpan.Value))
+						_ib.Get(task.Id);
+					keepLocalTask = _tasks.ContainsKey(task.Id);
+				}
+				catch
+				{
+					if (persisted)
+						_taskHandler.OnRemove(task);
+					throw;
+				}
+				finally
+				{
+					if (keepLocalTask == false && _tasks.TryRemove(task.Id, out var _))
 					{
-						_tasks.TryRemove(task.Id, out var old);
+						if (quantityIncremented)
+							Interlocked.Decrement(ref _quantityTask);
+						_ib.TryRemove(task.Id, true);
+					}
+					if (registered == false || persisted == false && isSave)
+					{
 						_clusterContext?.Remove(task.Id, nameof(AddTask));
-						throw;
 					}
 				}
-				Interlocked.Increment(ref _quantityTask);
-				var nextTimeSpan = LocalGetNextTimeSpan(task.Status, task.CurrentRound);
-				if (nextTimeSpan != null && _ib.TryRegister(task.Id, () => bus, nextTimeSpan.Value))
-					_ib.Get(task.Id);
 			}
 
 			TimeSpan? LocalGetNextTimeSpan(TaskStatus status, int curRound)
@@ -499,6 +606,7 @@ namespace FreeScheduler
 		{
 			if (_tasks.TryGetValue(id, out var task))
             {
+				if (_persistentTaskMode != PersistentTaskMode.Active) return false;
 				if (_ib.Exists(id) == false) return false; //正在触发
 				task.InternalFlag = 1;
 				try
@@ -525,6 +633,8 @@ namespace FreeScheduler
                 };
 				var startdt = DateTime.UtcNow;
 				var status = task.Status;
+				_runningPersistentTasks[task.Id] = 0;
+				Interlocked.Increment(ref _quantityTaskRunning);
 				try
 				{
 					task.RemarkValue = null;
@@ -538,6 +648,8 @@ namespace FreeScheduler
 				}
 				finally
 				{
+					_runningPersistentTasks.TryRemove(task.Id, out var _);
+					Interlocked.Decrement(ref _quantityTaskRunning);
                     if (string.IsNullOrWhiteSpace(task.RemarkValue) == false)
                     {
                         if (task.RemarkValue.StartsWith(", ")) task.RemarkValue = task.RemarkValue.Substring(2);
