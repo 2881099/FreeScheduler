@@ -83,6 +83,56 @@
             <param name="scheduler"></param>
             <param name="task"></param>
         </member>
+        <member name="T:FreeScheduler.PersistentTaskMode">
+            <summary>
+            持久化任务调度模式。
+            </summary>
+        </member>
+        <member name="F:FreeScheduler.PersistentTaskMode.Standby">
+            <summary>
+            待命，不加载也不触发新的持久化任务。
+            </summary>
+        </member>
+        <member name="F:FreeScheduler.PersistentTaskMode.Active">
+            <summary>
+            激活，正常加载和触发持久化任务。
+            </summary>
+        </member>
+        <member name="F:FreeScheduler.PersistentTaskMode.Draining">
+            <summary>
+            排空，不再接收新的持久化任务触发，但允许已经开始执行的任务自然结束。
+            </summary>
+        </member>
+        <member name="T:FreeScheduler.PersistentTaskRuntimeState">
+            <summary>
+            持久化任务运行时状态。
+            </summary>
+        </member>
+        <member name="P:FreeScheduler.PersistentTaskRuntimeState.Mode">
+            <summary>
+            当前调度模式。
+            </summary>
+        </member>
+        <member name="P:FreeScheduler.PersistentTaskRuntimeState.LoadedTaskCount">
+            <summary>
+            当前已加载的持久化任务数量。
+            </summary>
+        </member>
+        <member name="P:FreeScheduler.PersistentTaskRuntimeState.RunningTaskCount">
+            <summary>
+            当前正在执行中的持久化任务数量。
+            </summary>
+        </member>
+        <member name="P:FreeScheduler.PersistentTaskRuntimeState.AcceptingNewTriggers">
+            <summary>
+            是否仍会接收新的持久化任务触发。
+            </summary>
+        </member>
+        <member name="P:FreeScheduler.PersistentTaskRuntimeState.IsDrained">
+            <summary>
+            是否已经排空。
+            </summary>
+        </member>
         <member name="P:FreeScheduler.TaskInfo.Id">
             <summary>
             任务编号
@@ -253,9 +303,29 @@
             扫描线程间隔（默认值：200毫秒）
             </summary>
         </member>
+        <member name="P:FreeScheduler.Scheduler.PersistentTaskMode">
+            <summary>
+            持久化任务调度模式。
+            </summary>
+        </member>
         <member name="P:FreeScheduler.Scheduler.TimeOffset">
             <summary>
             时区
+            </summary>
+        </member>
+        <member name="M:FreeScheduler.Scheduler.LoadPersistentTasks">
+            <summary>
+            加载全部持久化任务，并切换为 Active。
+            </summary>
+        </member>
+        <member name="M:FreeScheduler.Scheduler.BeginDrainPersistentTasks">
+            <summary>
+            开始排空持久化任务，不再接收新的自动触发。
+            </summary>
+        </member>
+        <member name="M:FreeScheduler.Scheduler.GetPersistentTaskRuntimeState">
+            <summary>
+            获取持久化任务运行时状态。
             </summary>
         </member>
         <member name="M:FreeScheduler.Scheduler.AddTempTask(System.TimeSpan,System.Action)">

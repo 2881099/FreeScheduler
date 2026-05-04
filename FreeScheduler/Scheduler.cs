@@ -163,7 +163,11 @@ namespace FreeScheduler
 
 		void LoadPersistentTasksPage(int pageNumber, int loadToken)
 		{
+			#if NET40
+			if (loadToken != Thread.VolatileRead(ref _persistentTaskLoadToken)) return;
+			#else
 			if (loadToken != Volatile.Read(ref _persistentTaskLoadToken)) return;
+			#endif
 			if (_persistentTaskMode != PersistentTaskMode.Active) return;
 
 			var tasks = _taskHandler.LoadAll(pageNumber, 100).ToArray();
